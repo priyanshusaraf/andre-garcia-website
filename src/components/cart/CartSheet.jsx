@@ -1,0 +1,151 @@
+'use client';
+
+import React from 'react';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { ShoppingBag, Plus, Minus, X, ShoppingCart } from 'lucide-react';
+import { useCart } from '@/contexts/CartContext';
+
+const CartSheet = () => {
+  const { items, itemCount, totalPrice, addItem, removeItem, updateQuantity, clearCart } = useCart();
+
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(price);
+  };
+
+  return (
+    <Sheet>
+      <SheetTrigger asChild>
+        <Button variant="ghost" size="icon" className="relative">
+          <ShoppingBag className="h-5 w-5" />
+          {itemCount > 0 && (
+            <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs">
+              {itemCount}
+            </Badge>
+          )}
+        </Button>
+      </SheetTrigger>
+      
+      <SheetContent className="w-full sm:max-w-lg">
+        <SheetHeader>
+          <SheetTitle className="flex items-center gap-2">
+            <ShoppingCart className="h-5 w-5" />
+            Shopping Cart ({itemCount} items)
+          </SheetTitle>
+        </SheetHeader>
+
+        <div className="flex flex-col h-full mt-6">
+          {items.length === 0 ? (
+            <div className="flex-1 flex flex-col items-center justify-center text-center space-y-4">
+              <ShoppingBag className="h-16 w-16 text-muted-foreground" />
+              <div>
+                <h3 className="font-semibold text-lg mb-2">Your cart is empty</h3>
+                <p className="text-muted-foreground text-sm">
+                  Add some premium cigar containers to get started
+                </p>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Cart Items */}
+              <div className="flex-1 overflow-y-auto space-y-4">
+                {items.map((item) => (
+                  <div key={item.id} className="flex gap-4 p-4 border rounded-lg">
+                    {/* Product Image Placeholder */}
+                    <div className="w-16 h-16 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-md flex-shrink-0">
+                      <div className="w-full h-full bg-primary/10 rounded-md flex items-center justify-center">
+                        <div className="w-8 h-8 bg-primary/20 rounded"></div>
+                      </div>
+                    </div>
+
+                    {/* Product Details */}
+                    <div className="flex-1 space-y-2">
+                      <h4 className="font-semibold text-sm">{item.name}</h4>
+                      <p className="text-xs text-muted-foreground">{item.category}</p>
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-primary">{item.price}</span>
+                        
+                        {/* Quantity Controls */}
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                          >
+                            <Minus className="h-3 w-3" />
+                          </Button>
+                          <span className="w-8 text-center text-sm">{item.quantity}</span>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                          >
+                            <Plus className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Remove Button */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                      onClick={() => removeItem(item.id)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+
+              <Separator className="my-4" />
+
+              {/* Cart Summary */}
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold">Total ({itemCount} items):</span>
+                  <span className="font-bold text-xl text-primary">
+                    {formatPrice(totalPrice)}
+                  </span>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="space-y-2">
+                  <Button className="w-full" size="lg">
+                    Proceed to Checkout
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={clearCart}
+                  >
+                    Clear Cart
+                  </Button>
+                </div>
+
+                {/* Free Shipping Notice */}
+                {totalPrice < 500 && (
+                  <div className="text-center p-3 bg-muted rounded-lg">
+                    <p className="text-sm text-muted-foreground">
+                      Add {formatPrice(500 - totalPrice)} more for free shipping!
+                    </p>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+};
+
+export default CartSheet; 

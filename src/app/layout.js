@@ -2,6 +2,7 @@ import { Inter, Playfair_Display, Cinzel } from 'next/font/google';
 import './globals.css';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
+import { CartProvider } from '@/contexts/CartContext';
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -76,11 +77,13 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${inter.variable} ${playfair.variable} ${cinzel.variable}`}>
       <body className="min-h-screen flex flex-col">
-        <Navbar />
-        <main className="flex-grow">
-          {children}
-        </main>
-        <Footer />
+        <CartProvider>
+          <Navbar />
+          <main className="flex-grow">
+            {children}
+          </main>
+          <Footer />
+        </CartProvider>
       </body>
     </html>
   );

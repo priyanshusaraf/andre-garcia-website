@@ -1,50 +1,23 @@
+'use client';
+
 import React from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Star, ArrowRight } from 'lucide-react';
+import { products } from '@/data/products';
+import { useCart } from '@/contexts/CartContext';
 
 const FeaturedProducts = () => {
-  const products = [
-    {
-      id: 1,
-      name: "Signature Mahogany Humidor",
-      category: "Desktop Humidors",
-      price: "$1,299",
-      originalPrice: "$1,599",
-      rating: 5,
-      reviews: 47,
-      badge: "Best Seller",
-      badgeVariant: "default",
-      image: "/api/placeholder/300/300",
-      description: "Handcrafted from premium mahogany with Spanish cedar lining. Holds up to 50 cigars with precision humidity control."
-    },
-    {
-      id: 2,
-      name: "Executive Travel Case",
-      category: "Travel Cases",
-      price: "$349",
-      rating: 4.9,
-      reviews: 23,
-      badge: "New",
-      badgeVariant: "secondary",
-      image: "/api/placeholder/300/300",
-      description: "Compact luxury for the discerning traveler. Waterproof, crush-resistant, and beautifully appointed."
-    },
-    {
-      id: 3,
-      name: "Heritage Cabinet Collection",
-      category: "Cabinet Humidors",
-      price: "$4,299",
-      rating: 5,
-      reviews: 12,
-      badge: "Premium",
-      badgeVariant: "secondary",
-      image: "/api/placeholder/300/300",
-      description: "The pinnacle of cigar storage. Holds 300+ cigars with museum-quality preservation technology."
-    }
-  ];
+  const { addItem } = useCart();
+  
+  // Get only featured products
+  const featuredProducts = products.filter(product => product.featured).slice(0, 3);
+
+  const handleAddToCart = (product) => {
+    addItem(product);
+  };
 
   return (
     <section className="py-20 bg-muted/30">
@@ -60,7 +33,7 @@ const FeaturedProducts = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-          {products.map((product) => (
+          {featuredProducts.map((product) => (
             <Card key={product.id} className="group hover:shadow-luxury transition-all duration-300 border-border/50 bg-card">
               <CardHeader className="p-0">
                 <div className="relative overflow-hidden rounded-t-lg">
@@ -119,11 +92,19 @@ const FeaturedProducts = () => {
                 </div>
               </CardContent>
 
-              <CardFooter className="p-6 pt-0">
+              <CardFooter className="p-6 pt-0 space-y-2">
                 <Button asChild className="w-full">
                   <Link href={`/products/${product.id}`}>
-                    Add to Cart
+                    View Details
                   </Link>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => handleAddToCart(product)}
+                  disabled={!product.inStock}
+                >
+                  {product.inStock ? 'Add to Cart' : 'Out of Stock'}
                 </Button>
               </CardFooter>
             </Card>

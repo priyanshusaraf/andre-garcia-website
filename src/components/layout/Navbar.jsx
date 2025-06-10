@@ -3,7 +3,8 @@ import Link from 'next/link';
 import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger } from '@/components/ui/navigation-menu';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Search, ShoppingBag, User } from 'lucide-react';
+import { Menu, Search, User } from 'lucide-react';
+import CartSheet from '@/components/cart/CartSheet';
 
 const Navbar = () => {
   return (
@@ -92,12 +93,7 @@ const Navbar = () => {
             <Button variant="ghost" size="icon">
               <User className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="icon" className="relative">
-              <ShoppingBag className="h-5 w-5" />
-              <span className="absolute -top-2 -right-2 h-4 w-4 rounded-full bg-primary text-xs text-primary-foreground flex items-center justify-center">
-                2
-              </span>
-            </Button>
+            <CartSheet />
           </div>
 
           {/* Mobile Navigation */}
@@ -129,12 +125,7 @@ const Navbar = () => {
                     <Button variant="ghost" size="icon">
                       <User className="h-5 w-5" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="relative">
-                      <ShoppingBag className="h-5 w-5" />
-                      <span className="absolute -top-2 -right-2 h-4 w-4 rounded-full bg-primary text-xs text-primary-foreground flex items-center justify-center">
-                        2
-                      </span>
-                    </Button>
+                    <CartSheet />
                   </div>
                 </div>
               </SheetContent>

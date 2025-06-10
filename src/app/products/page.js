@@ -1,137 +1,32 @@
-import React from 'react';
+'use client';
+
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
 import { Star, ArrowRight, Filter, Grid, List, Search } from 'lucide-react';
-
-export const metadata = {
-  title: 'Premium Cigar Containers & Humidors - André García Collection',
-  description: 'Explore our complete collection of handcrafted premium cigar containers, humidors, and storage solutions. From desktop humidors to travel cases.',
-};
+import { products, categories, sortOptions, filterProducts } from '@/data/products';
+import { useCart } from '@/contexts/CartContext';
 
 const Products = () => {
-  const categories = [
-    { name: "All Products", count: 24, active: true },
-    { name: "Desktop Humidors", count: 8 },
-    { name: "Cabinet Humidors", count: 4 },
-    { name: "Travel Cases", count: 6 },
-    { name: "Accessories", count: 6 }
-  ];
+  const { addItem } = useCart();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All Products');
+  const [sortBy, setSortBy] = useState('featured');
+  const [viewMode, setViewMode] = useState('grid');
 
-  const products = [
-    {
-      id: 1,
-      name: "Signature Mahogany Humidor",
-      category: "Desktop Humidors",
-      price: "$1,299",
-      originalPrice: "$1,599",
-      rating: 5,
-      reviews: 47,
-      badge: "Best Seller",
-      badgeVariant: "default",
-      capacity: "50 Cigars",
-      material: "Mahogany & Spanish Cedar",
-      description: "Handcrafted from premium mahogany with Spanish cedar lining. Features precision humidity control and elegant brass hardware."
-    },
-    {
-      id: 2,
-      name: "Executive Travel Case",
-      category: "Travel Cases",
-      price: "$349",
-      rating: 4.9,
-      reviews: 23,
-      badge: "New",
-      badgeVariant: "secondary",
-      capacity: "5 Cigars",
-      material: "Leather & Cedar",
-      description: "Compact luxury for the discerning traveler. Waterproof, crush-resistant, and beautifully appointed with premium leather."
-    },
-    {
-      id: 3,
-      name: "Heritage Cabinet Collection",
-      category: "Cabinet Humidors",
-      price: "$4,299",
-      rating: 5,
-      reviews: 12,
-      badge: "Premium",
-      badgeVariant: "secondary",
-      capacity: "300+ Cigars",
-      material: "Walnut & Spanish Cedar",
-      description: "The pinnacle of cigar storage. Museum-quality preservation technology with handcrafted walnut construction."
-    },
-    {
-      id: 4,
-      name: "Classic Desktop Humidor",
-      category: "Desktop Humidors",
-      price: "$899",
-      rating: 4.8,
-      reviews: 34,
-      capacity: "25 Cigars",
-      material: "Cherry & Spanish Cedar",
-      description: "Elegant cherry wood construction with traditional brass fittings. Perfect for the beginning collector."
-    },
-    {
-      id: 5,
-      name: "Professional Travel Humidor",
-      category: "Travel Cases",
-      price: "$799",
-      rating: 4.9,
-      reviews: 18,
-      capacity: "15 Cigars",
-      material: "Carbon Fiber & Cedar",
-      description: "Ultra-lightweight carbon fiber exterior with Spanish cedar interior. Built for frequent travelers."
-    },
-    {
-      id: 6,
-      name: "Artisan Display Cabinet",
-      category: "Cabinet Humidors",
-      price: "$6,299",
-      rating: 5,
-      reviews: 8,
-      badge: "Limited Edition",
-      badgeVariant: "secondary",
-      capacity: "500+ Cigars",
-      material: "Exotic Burl & Cedar",
-      description: "Showcase your collection in this museum-quality display cabinet with climate-controlled sections."
-    },
-    {
-      id: 7,
-      name: "Compact Travel Tube",
-      category: "Travel Cases",
-      price: "$179",
-      rating: 4.7,
-      reviews: 56,
-      capacity: "2 Cigars",
-      material: "Aluminum & Cedar",
-      description: "Discreet protection for your favorite cigars. Fits easily in briefcase or luggage."
-    },
-    {
-      id: 8,
-      name: "Master's Edition Humidor",
-      category: "Desktop Humidors",
-      price: "$2,899",
-      rating: 5,
-      reviews: 15,
-      badge: "Master's Choice",
-      badgeVariant: "default",
-      capacity: "100 Cigars",
-      material: "Ebony & Spanish Cedar",
-      description: "André García's personal design featuring rare ebony wood and gold-plated hardware."
-    },
-    {
-      id: 9,
-      name: "Precision Hygrometer Set",
-      category: "Accessories",
-      price: "$199",
-      rating: 4.9,
-      reviews: 67,
-      capacity: "N/A",
-      material: "Stainless Steel",
-      description: "Professional-grade hygrometer and humidification system for optimal cigar preservation."
-    }
-  ];
+  // Filter and sort products based on current state
+  const filteredProducts = useMemo(() => {
+    return filterProducts(products, searchTerm, selectedCategory, sortBy);
+  }, [searchTerm, selectedCategory, sortBy]);
+
+  const handleAddToCart = (product) => {
+    addItem(product);
+  };
+
+
 
   return (
     <div className="min-h-screen">
@@ -160,9 +55,10 @@ const Products = () => {
               {categories.map((category, index) => (
                 <Button
                   key={index}
-                  variant={category.active ? "default" : "outline"}
+                  variant={selectedCategory === category.name ? "default" : "outline"}
                   size="sm"
                   className="text-sm"
+                  onClick={() => setSelectedCategory(category.name)}
                 >
                   {category.name} ({category.count})
                 </Button>
@@ -176,18 +72,39 @@ const Products = () => {
                 <input
                   type="text"
                   placeholder="Search products..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10 pr-4 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
               </div>
+              
+              {/* Sort Dropdown */}
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+              >
+                {sortOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              
               <div className="flex items-center gap-2">
-                <Button variant="ghost" size="icon">
+                <Button 
+                  variant={viewMode === 'grid' ? "default" : "ghost"} 
+                  size="icon"
+                  onClick={() => setViewMode('grid')}
+                >
                   <Grid className="h-4 w-4" />
                 </Button>
-                <Button variant="ghost" size="icon">
+                <Button 
+                  variant={viewMode === 'list' ? "default" : "ghost"} 
+                  size="icon"
+                  onClick={() => setViewMode('list')}
+                >
                   <List className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="icon">
-                  <Filter className="h-4 w-4" />
                 </Button>
               </div>
             </div>
@@ -198,8 +115,24 @@ const Products = () => {
       {/* Products Grid */}
       <section className="py-12 bg-background">
         <div className="container mx-auto px-4 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {products.map((product) => (
+          {/* Results Info */}
+          <div className="mb-6 text-sm text-muted-foreground">
+            Showing {filteredProducts.length} of {products.length} products
+            {searchTerm && ` for "${searchTerm}"`}
+            {selectedCategory !== "All Products" && ` in ${selectedCategory}`}
+          </div>
+
+          {filteredProducts.length === 0 ? (
+            <div className="text-center py-16">
+              <Search className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No products found</h3>
+              <p className="text-muted-foreground">
+                Try adjusting your search terms or filters
+              </p>
+            </div>
+          ) : (
+            <div className={`grid ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'} gap-8`}>
+              {filteredProducts.map((product) => (
               <Card key={product.id} className="group hover:shadow-luxury transition-all duration-300 border-border/50 bg-card">
                 <CardHeader className="p-0">
                   <div className="relative overflow-hidden rounded-t-lg">
@@ -274,27 +207,35 @@ const Products = () => {
                   </div>
                 </CardContent>
 
-                <CardFooter className="p-6 pt-0 space-y-2">
-                  <Button asChild className="w-full">
-                    <Link href={`/products/${product.id}`}>
-                      View Details
-                    </Link>
-                  </Button>
-                  <Button variant="outline" className="w-full">
-                    Add to Cart
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
+                                 <CardFooter className="p-6 pt-0 space-y-2">
+                   <Button asChild className="w-full">
+                     <Link href={`/products/${product.id}`}>
+                       View Details
+                     </Link>
+                   </Button>
+                   <Button 
+                     variant="outline" 
+                     className="w-full"
+                     onClick={() => handleAddToCart(product)}
+                     disabled={!product.inStock}
+                   >
+                     {product.inStock ? 'Add to Cart' : 'Out of Stock'}
+                   </Button>
+                 </CardFooter>
+               </Card>
+             ))}
+           </div>
+           )}
 
-          {/* Load More */}
-          <div className="text-center mt-12">
-            <Button variant="outline" size="lg">
-              Load More Products
-            </Button>
-          </div>
-        </div>
+           {/* Pagination or Load More could go here */}
+           {filteredProducts.length > 0 && (
+             <div className="text-center mt-12">
+               <p className="text-sm text-muted-foreground">
+                 Showing all {filteredProducts.length} results
+               </p>
+             </div>
+           )}
+         </div>
       </section>
 
       {/* Features Section */}
