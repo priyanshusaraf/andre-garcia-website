@@ -3,10 +3,16 @@ import Link from 'next/link';
 import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger } from '@/components/ui/navigation-menu';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Search, User } from 'lucide-react';
+import { Menu, Search, User, LogOut } from 'lucide-react';
 import CartSheet from '@/components/cart/CartSheet';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Navbar = () => {
+  const { user, isAuthenticated, logout } = useAuth();
+
+  const handleLogout = async () => {
+    await logout();
+  };
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4 lg:px-8">
@@ -90,9 +96,31 @@ const Navbar = () => {
             <Button variant="ghost" size="icon">
               <Search className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="icon">
-              <User className="h-5 w-5" />
-            </Button>
+            
+            {/* User Authentication */}
+            {isAuthenticated ? (
+              <div className="flex items-center space-x-2">
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href="/account">
+                    <User className="h-4 w-4 mr-2" />
+                    {user?.name || user?.email}
+                  </Link>
+                </Button>
+                <Button variant="ghost" size="icon" onClick={handleLogout}>
+                  <LogOut className="h-5 w-5" />
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href="/auth/signin">Sign In</Link>
+                </Button>
+                <Button size="sm" asChild>
+                  <Link href="/auth/signup">Sign Up</Link>
+                </Button>
+              </div>
+            )}
+            
             <CartSheet />
           </div>
 
@@ -118,14 +146,39 @@ const Navbar = () => {
                   <Link href="/contact" className="text-lg font-medium">
                     Contact
                   </Link>
-                  <div className="flex items-center space-x-4 pt-4 border-t">
-                    <Button variant="ghost" size="icon">
+                  <div className="flex flex-col space-y-4 pt-4 border-t">
+                    <Button variant="ghost" size="icon" className="self-start">
                       <Search className="h-5 w-5" />
                     </Button>
-                    <Button variant="ghost" size="icon">
-                      <User className="h-5 w-5" />
-                    </Button>
-                    <CartSheet />
+                    
+                    {/* Mobile User Authentication */}
+                    {isAuthenticated ? (
+                      <div className="flex flex-col space-y-2">
+                        <Button variant="ghost" asChild className="justify-start">
+                          <Link href="/account">
+                            <User className="h-4 w-4 mr-2" />
+                            {user?.name || user?.email}
+                          </Link>
+                        </Button>
+                        <Button variant="ghost" onClick={handleLogout} className="justify-start">
+                          <LogOut className="h-4 w-4 mr-2" />
+                          Sign Out
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col space-y-2">
+                        <Button variant="ghost" asChild className="justify-start">
+                          <Link href="/auth/signin">Sign In</Link>
+                        </Button>
+                        <Button asChild className="justify-start">
+                          <Link href="/auth/signup">Sign Up</Link>
+                        </Button>
+                      </div>
+                    )}
+                    
+                    <div className="pt-2">
+                      <CartSheet />
+                    </div>
                   </div>
                 </div>
               </SheetContent>

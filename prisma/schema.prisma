@@ -1,0 +1,300 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// User authentication and profile
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  phone     String?  @unique
+  name      String?
+  password  String
+  role      Role     @default(CUSTOMER)
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // User profile
+  profile UserProfile?
+
+  // Orders
+  orders Order[]
+
+  // Cart items (persistent cart)
+  cartItems CartItem[]
+
+  // Email verification
+  verificationTokens VerificationToken[]
+
+  @@map("users")
+}
+
+model UserProfile {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  firstName String?
+  lastName  String?
+  company   String?
+  
+  // Addresses
+  addresses Address[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("user_profiles")
+}
+
+model Address {
+  id        String   @id @default(cuid())
+  profileId String
+  profile   UserProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  
+  type      AddressType @default(SHIPPING)
+  firstName String
+  lastName  String
+  company   String?
+  address1  String
+  address2  String?
+  city      String
+  state     String
+  zipCode   String
+  country   String   @default("US")
+  phone     String?
+  
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Orders using this address
+  shippingOrders Order[] @relation("ShippingAddress")
+  billingOrders  Order[] @relation("BillingAddress")
+
+  @@map("addresses")
+}
+
+// Products (enhanced from existing data)
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String   @db.Text
+  category    String
+  
+  // Pricing
+  price       Decimal  @db.Decimal(10, 2)
+  originalPrice Decimal? @db.Decimal(10, 2)
+  
+  // Product details
+  capacity    String?
+  material    String?
+  dimensions  String?
+  weight      String?
+  warranty    String?
+  origin      String?
+  
+  // Inventory
+  inStock     Boolean  @default(true)
+  stockCount  Int      @default(0)
+  
+  // Features and images
+  features    Json?
+  images      Json?
+  
+  // Product status
+  featured    Boolean  @default(false)
+  active      Boolean  @default(true)
+  
+  // SEO
+  metaTitle       String?
+  metaDescription String?
+  
+  // Ratings
+  rating      Float    @default(0)
+  reviewCount Int      @default(0)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  orderItems OrderItem[]
+  cartItems  CartItem[]
+  reviews    Review[]
+
+  @@map("products")
+}
+
+// Shopping cart
+model CartItem {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, productId])
+  @@map("cart_items")
+}
+
+// Orders
+model Order {
+  id       String      @id @default(cuid())
+  orderNumber String   @unique
+  userId   String
+  user     User        @relation(fields: [userId], references: [id])
+  
+  // Order status
+  status   OrderStatus @default(PENDING)
+  
+  // Pricing
+  subtotal    Decimal @db.Decimal(10, 2)
+  tax         Decimal @db.Decimal(10, 2) @default(0)
+  shipping    Decimal @db.Decimal(10, 2) @default(0)
+  discount    Decimal @db.Decimal(10, 2) @default(0)
+  total       Decimal @db.Decimal(10, 2)
+  
+  // Addresses
+  shippingAddressId String?
+  shippingAddress   Address? @relation("ShippingAddress", fields: [shippingAddressId], references: [id])
+  billingAddressId  String?
+  billingAddress    Address? @relation("BillingAddress", fields: [billingAddressId], references: [id])
+  
+  // Payment
+  paymentStatus PaymentStatus @default(PENDING)
+  paymentMethod String?
+  paymentId     String?
+  
+  // Fulfillment
+  fulfillmentStatus FulfillmentStatus @default(PENDING)
+  trackingNumber    String?
+  
+  // Timestamps
+  orderDate    DateTime  @default(now())
+  shippedDate  DateTime?
+  deliveredDate DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // Order items
+  items OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  
+  quantity    Int
+  price       Decimal @db.Decimal(10, 2)
+  total       Decimal @db.Decimal(10, 2)
+  
+  // Product snapshot at time of order
+  productName        String
+  productDescription String?
+  productImage       String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("order_items")
+}
+
+// Reviews
+model Review {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  rating    Int      // 1-5 stars
+  title     String?
+  comment   String?  @db.Text
+  verified  Boolean  @default(false) // Verified purchase
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, productId])
+  @@map("reviews")
+}
+
+// Email verification
+model VerificationToken {
+  id      String @id @default(cuid())
+  userId  String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token   String @unique
+  type    TokenType
+  expires DateTime
+  used    Boolean @default(false)
+  
+  createdAt DateTime @default(now())
+
+  @@map("verification_tokens")
+}
+
+// Enums
+enum Role {
+  CUSTOMER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum AddressType {
+  SHIPPING
+  BILLING
+  BOTH
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+enum FulfillmentStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum TokenType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+  PHONE_VERIFICATION
+}

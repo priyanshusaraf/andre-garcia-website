@@ -92,20 +92,22 @@ const FeaturedProducts = () => {
                 </div>
               </CardContent>
 
-              <CardFooter className="p-6 pt-0 space-y-2">
-                <Button asChild className="w-full">
-                  <Link href={`/products/${product.id}`}>
-                    View Details
-                  </Link>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                  onClick={() => handleAddToCart(product)}
-                  disabled={!product.inStock}
-                >
-                  {product.inStock ? 'Add to Cart' : 'Out of Stock'}
-                </Button>
+              <CardFooter className="p-6 pt-0">
+                <div className="flex flex-col w-full gap-3">
+                  <Button asChild className="w-full">
+                    <Link href={`/products/${product.id}`}>
+                      View Details
+                    </Link>
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => handleAddToCart(product)}
+                    disabled={!product.inStock}
+                  >
+                    {product.inStock ? 'Add to Cart' : 'Out of Stock'}
+                  </Button>
+                </div>
               </CardFooter>
             </Card>
           ))}
