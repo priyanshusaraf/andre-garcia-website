@@ -6,31 +6,45 @@ import { register as apiRegister, login as apiLogin, fetchUserProfile } from '..
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => {
-    const storedUser = localStorage.getItem('user');
-    return storedUser ? JSON.parse(storedUser) : null;
-  });
+  const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [token, setToken] = useState(() => localStorage.getItem('token'));
+  const [token, setToken] = useState(null);
+  const [restored, setRestored] = useState(false); // flag to ensure restoration before backend check
+
+  // On mount, restore user and token from localStorage (client only)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedUser = localStorage.getItem('user');
+      const storedToken = localStorage.getItem('token');
+      if (storedUser) setUser(JSON.parse(storedUser));
+      if (storedToken) setToken(storedToken);
+      setRestored(true);
+    }
+  }, []);
 
   // Keep localStorage in sync with state
   useEffect(() => {
-    if (token) {
-      localStorage.setItem('token', token);
-    } else {
-      localStorage.removeItem('token');
+    if (typeof window !== 'undefined') {
+      if (token) {
+        localStorage.setItem('token', token);
+      } else {
+        localStorage.removeItem('token');
+      }
     }
   }, [token]);
   useEffect(() => {
-    if (user) {
-      localStorage.setItem('user', JSON.stringify(user));
-    } else {
-      localStorage.removeItem('user');
+    if (typeof window !== 'undefined') {
+      if (user) {
+        localStorage.setItem('user', JSON.stringify(user));
+      } else {
+        localStorage.removeItem('user');
+      }
     }
   }, [user]);
 
-  // On mount, verify token and user
+  // On token change, verify user with backend if needed (run only after restoration)
   useEffect(() => {
+    if (!restored) return;
     if (!token) {
       setUser(null);
       setIsLoading(false);
@@ -43,14 +57,13 @@ export function AuthProvider({ children }) {
         setIsLoading(false);
       })
       .catch((err) => {
-        // Only clear user if unauthorized
         if (err?.response?.status === 401) {
           setUser(null);
           setToken(null);
         }
         setIsLoading(false);
       });
-  }, [token]);
+  }, [token, restored]);
 
   const login = async (credentials) => {
     try {
