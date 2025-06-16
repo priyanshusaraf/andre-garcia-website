@@ -1,74 +1,25 @@
 'use client';
 
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
+import api from '../lib/utils';
+import { useAuth } from './AuthContext';
 
 // Cart actions
 const CART_ACTIONS = {
-  ADD_ITEM: 'ADD_ITEM',
-  REMOVE_ITEM: 'REMOVE_ITEM',
-  UPDATE_QUANTITY: 'UPDATE_QUANTITY',
-  CLEAR_CART: 'CLEAR_CART',
-  LOAD_CART: 'LOAD_CART'
+  SET_CART: 'SET_CART',
+  SET_LOADING: 'SET_LOADING',
+  SET_ERROR: 'SET_ERROR',
 };
 
 // Cart reducer
 const cartReducer = (state, action) => {
   switch (action.type) {
-    case CART_ACTIONS.ADD_ITEM: {
-      const existingItem = state.items.find(item => item.id === action.payload.id);
-      
-      if (existingItem) {
-        return {
-          ...state,
-          items: state.items.map(item =>
-            item.id === action.payload.id
-              ? { ...item, quantity: item.quantity + (action.payload.quantity || 1) }
-              : item
-          )
-        };
-      }
-      
-      return {
-        ...state,
-        items: [...state.items, { ...action.payload, quantity: action.payload.quantity || 1 }]
-      };
-    }
-    
-    case CART_ACTIONS.REMOVE_ITEM:
-      return {
-        ...state,
-        items: state.items.filter(item => item.id !== action.payload.id)
-      };
-    
-    case CART_ACTIONS.UPDATE_QUANTITY:
-      if (action.payload.quantity <= 0) {
-        return {
-          ...state,
-          items: state.items.filter(item => item.id !== action.payload.id)
-        };
-      }
-      
-      return {
-        ...state,
-        items: state.items.map(item =>
-          item.id === action.payload.id
-            ? { ...item, quantity: action.payload.quantity }
-            : item
-        )
-      };
-    
-    case CART_ACTIONS.CLEAR_CART:
-      return {
-        ...state,
-        items: []
-      };
-    
-    case CART_ACTIONS.LOAD_CART:
-      return {
-        ...state,
-        items: action.payload.items || []
-      };
-    
+    case CART_ACTIONS.SET_CART:
+      return { ...state, items: action.payload, loading: false, error: null };
+    case CART_ACTIONS.SET_LOADING:
+      return { ...state, loading: true, error: null };
+    case CART_ACTIONS.SET_ERROR:
+      return { ...state, loading: false, error: action.payload };
     default:
       return state;
   }
@@ -77,7 +28,8 @@ const cartReducer = (state, action) => {
 // Initial state
 const initialState = {
   items: [],
-  isOpen: false
+  loading: true,
+  error: null,
 };
 
 // Create context
@@ -86,63 +38,76 @@ const CartContext = createContext();
 // Cart provider component
 export const CartProvider = ({ children }) => {
   const [state, dispatch] = useReducer(cartReducer, initialState);
+  const { token, isAuthenticated } = useAuth();
 
-  // Load cart from localStorage on mount
+  // Fetch cart from backend on mount or when user logs in
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedCart = localStorage.getItem('andre-garcia-cart');
-      if (savedCart) {
-        try {
-          const parsedCart = JSON.parse(savedCart);
-          dispatch({ type: CART_ACTIONS.LOAD_CART, payload: parsedCart });
-        } catch (error) {
-          console.error('Error loading cart:', error);
-        }
-      }
+    if (!isAuthenticated || !token) {
+      dispatch({ type: CART_ACTIONS.SET_CART, payload: [] });
+      return;
     }
-  }, []);
+    dispatch({ type: CART_ACTIONS.SET_LOADING });
+    api.get('/cart', { headers: { Authorization: `Bearer ${token}` } })
+      .then(res => {
+        dispatch({ type: CART_ACTIONS.SET_CART, payload: res.data.cart_items || [] });
+      })
+      .catch(err => {
+        dispatch({ type: CART_ACTIONS.SET_ERROR, payload: 'Failed to load cart' });
+      });
+  }, [isAuthenticated, token]);
 
-  // Save cart to localStorage whenever it changes
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('andre-garcia-cart', JSON.stringify(state));
+  // Add item to cart
+  const addItem = async (product, quantity = 1) => {
+    if (!token) return;
+    dispatch({ type: CART_ACTIONS.SET_LOADING });
+    try {
+      const res = await api.post('/cart/add', { product_id: product.id, quantity }, { headers: { Authorization: `Bearer ${token}` } });
+      dispatch({ type: CART_ACTIONS.SET_CART, payload: res.data.cart_items || [] });
+    } catch (err) {
+      dispatch({ type: CART_ACTIONS.SET_ERROR, payload: 'Failed to add item' });
     }
-  }, [state]);
-
-  // Cart actions
-  const addItem = (product, quantity = 1) => {
-    dispatch({
-      type: CART_ACTIONS.ADD_ITEM,
-      payload: { ...product, quantity }
-    });
   };
 
-  const removeItem = (productId) => {
-    dispatch({
-      type: CART_ACTIONS.REMOVE_ITEM,
-      payload: { id: productId }
-    });
+  // Update cart item quantity
+  const updateQuantity = async (itemId, quantity) => {
+    if (!token) return;
+    dispatch({ type: CART_ACTIONS.SET_LOADING });
+    try {
+      const res = await api.put('/cart/update', { item_id: itemId, quantity }, { headers: { Authorization: `Bearer ${token}` } });
+      dispatch({ type: CART_ACTIONS.SET_CART, payload: res.data.cart_items || [] });
+    } catch (err) {
+      dispatch({ type: CART_ACTIONS.SET_ERROR, payload: 'Failed to update item' });
+    }
   };
 
-  const updateQuantity = (productId, quantity) => {
-    dispatch({
-      type: CART_ACTIONS.UPDATE_QUANTITY,
-      payload: { id: productId, quantity }
-    });
+  // Remove item from cart
+  const removeItem = async (itemId) => {
+    if (!token) return;
+    dispatch({ type: CART_ACTIONS.SET_LOADING });
+    try {
+      const res = await api.delete('/cart/remove', { data: { item_id: itemId }, headers: { Authorization: `Bearer ${token}` } });
+      dispatch({ type: CART_ACTIONS.SET_CART, payload: res.data.cart_items || [] });
+    } catch (err) {
+      dispatch({ type: CART_ACTIONS.SET_ERROR, payload: 'Failed to remove item' });
+    }
   };
 
-  const clearCart = () => {
-    dispatch({ type: CART_ACTIONS.CLEAR_CART });
-  };
-
-  const toggleCart = () => {
-    dispatch({ type: 'TOGGLE_CART' });
+  // Clear cart
+  const clearCart = async () => {
+    if (!token) return;
+    dispatch({ type: CART_ACTIONS.SET_LOADING });
+    try {
+      const res = await api.delete('/cart/clear', { headers: { Authorization: `Bearer ${token}` } });
+      dispatch({ type: CART_ACTIONS.SET_CART, payload: res.data.cart_items || [] });
+    } catch (err) {
+      dispatch({ type: CART_ACTIONS.SET_ERROR, payload: 'Failed to clear cart' });
+    }
   };
 
   // Computed values
   const itemCount = state.items.reduce((total, item) => total + item.quantity, 0);
   const totalPrice = state.items.reduce((total, item) => {
-    const price = parseFloat(item.price.replace('$', '').replace(',', ''));
+    const price = parseFloat(item.products?.price || item.price || 0);
     return total + (price * item.quantity);
   }, 0);
 
@@ -152,9 +117,8 @@ export const CartProvider = ({ children }) => {
     removeItem,
     updateQuantity,
     clearCart,
-    toggleCart,
     itemCount,
-    totalPrice
+    totalPrice,
   };
 
   return (

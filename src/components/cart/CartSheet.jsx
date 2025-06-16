@@ -54,56 +54,61 @@ const CartSheet = () => {
             <>
               {/* Cart Items */}
               <div className="flex-1 overflow-y-auto space-y-4">
-                {items.map((item) => (
-                  <div key={item.id} className="flex gap-4 p-4 border rounded-lg">
-                    {/* Product Image Placeholder */}
-                    <div className="w-16 h-16 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-md flex-shrink-0">
-                      <div className="w-full h-full bg-primary/10 rounded-md flex items-center justify-center">
-                        <div className="w-8 h-8 bg-primary/20 rounded"></div>
+                {items.map((item) => {
+                  // Support both backend (item.products) and fallback (item) structure
+                  const product = item.products || item;
+                  return (
+                    <div key={item.id} className="flex gap-4 p-4 border rounded-lg">
+                      {/* Product Image */}
+                      <div className="w-16 h-16 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-md flex-shrink-0 flex items-center justify-center overflow-hidden">
+                        {product.image_url ? (
+                          <img src={product.image_url} alt={product.name} className="w-full h-full object-cover rounded-md" />
+                        ) : (
+                          <div className="w-8 h-8 bg-primary/20 rounded"></div>
+                        )}
                       </div>
-                    </div>
 
-                    {/* Product Details */}
-                    <div className="flex-1 space-y-2">
-                      <h4 className="font-semibold text-sm">{item.name}</h4>
-                      <p className="text-xs text-muted-foreground">{item.category}</p>
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-primary">{item.price}</span>
-                        
-                        {/* Quantity Controls */}
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-6 w-6"
-                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          >
-                            <Minus className="h-3 w-3" />
-                          </Button>
-                          <span className="w-8 text-center text-sm">{item.quantity}</span>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-6 w-6"
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          >
-                            <Plus className="h-3 w-3" />
-                          </Button>
+                      {/* Product Details */}
+                      <div className="flex-1 space-y-2">
+                        <h4 className="font-semibold text-sm">{product.name}</h4>
+                        <p className="text-xs text-muted-foreground">{product.category}</p>
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-primary">{product.price}</span>
+                          {/* Quantity Controls */}
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                            >
+                              <Minus className="h-3 w-3" />
+                            </Button>
+                            <span className="w-8 text-center text-sm">{item.quantity}</span>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                            >
+                              <Plus className="h-3 w-3" />
+                            </Button>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Remove Button */}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 text-muted-foreground hover:text-destructive"
-                      onClick={() => removeItem(item.id)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
+                      {/* Remove Button */}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                        onClick={() => removeItem(item.id)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  );
+                })}
               </div>
 
               <Separator className="my-4" />

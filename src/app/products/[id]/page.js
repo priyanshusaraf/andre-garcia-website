@@ -1,23 +1,40 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Star, ArrowLeft, Minus, Plus, Shield, Truck, RotateCcw, Heart } from 'lucide-react';
-import { getProductById } from '@/data/products';
+import api from '@/lib/utils';
 import { useCart } from '@/contexts/CartContext';
 import Link from 'next/link';
 
 const ProductDetail = () => {
   const params = useParams();
   const { addItem } = useCart();
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [quantity, setQuantity] = useState(1);
 
-  const product = getProductById(params.id);
+  useEffect(() => {
+    setLoading(true);
+    api.get(`/products/${params.id}`)
+      .then(res => {
+        setProduct(res.data);
+        setLoading(false);
+      })
+      .catch(err => {
+        setError('Failed to load product');
+        setLoading(false);
+      });
+  }, [params.id]);
 
-  if (!product) {
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading product...</div>;
+  }
+  if (error || !product) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

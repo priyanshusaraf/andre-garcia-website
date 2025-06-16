@@ -1,32 +1,106 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
 import { Star, ArrowRight, Filter, Grid, List, Search } from 'lucide-react';
-import { products, categories, sortOptions, filterProducts } from '@/data/products';
+import api from '@/lib/utils';
 import { useCart } from '@/contexts/CartContext';
+
+const sortOptions = [
+  { value: "featured", label: "Featured" },
+  { value: "name-asc", label: "Name: A to Z" },
+  { value: "name-desc", label: "Name: Z to A" },
+  { value: "price-asc", label: "Price: Low to High" },
+  { value: "price-desc", label: "Price: High to Low" },
+  { value: "rating", label: "Highest Rated" },
+  { value: "newest", label: "Newest First" }
+];
+
+function filterProducts(products, searchTerm, category, sortBy) {
+  let filtered = [...products];
+  if (searchTerm) {
+    const search = searchTerm.toLowerCase();
+    filtered = filtered.filter(product =>
+      product.name.toLowerCase().includes(search) ||
+      product.description.toLowerCase().includes(search) ||
+      product.category.toLowerCase().includes(search) ||
+      product.material.toLowerCase().includes(search)
+    );
+  }
+  if (category && category !== "All Products") {
+    filtered = filtered.filter(product => product.category === category);
+  }
+  filtered.sort((a, b) => {
+    switch (sortBy) {
+      case "name-asc":
+        return a.name.localeCompare(b.name);
+      case "name-desc":
+        return b.name.localeCompare(a.name);
+      case "price-asc":
+        return parseFloat(a.price.replace('$', '').replace(',', '')) - parseFloat(b.price.replace('$', '').replace(',', ''));
+      case "price-desc":
+        return parseFloat(b.price.replace('$', '').replace(',', '')) - parseFloat(a.price.replace('$', '').replace(',', ''));
+      case "rating":
+        return b.rating - a.rating;
+      case "newest":
+        return b.id - a.id;
+      case "featured":
+      default:
+        return b.featured ? 1 : -1;
+    }
+  });
+  return filtered;
+}
 
 const Products = () => {
   const { addItem } = useCart();
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All Products');
   const [sortBy, setSortBy] = useState('featured');
   const [viewMode, setViewMode] = useState('grid');
 
-  // Filter and sort products based on current state
+  useEffect(() => {
+    setLoading(true);
+    api.get('/products')
+      .then(res => {
+        setProducts(res.data);
+        setLoading(false);
+      })
+      .catch(err => {
+        setError('Failed to load products');
+        setLoading(false);
+      });
+  }, []);
+
+  // Derive categories from products
+  const categories = useMemo(() => {
+    const cats = products.reduce((acc, p) => {
+      acc[p.category] = (acc[p.category] || 0) + 1;
+      return acc;
+    }, {});
+    return [
+      { name: 'All Products', count: products.length },
+      ...Object.entries(cats).map(([name, count]) => ({ name, count }))
+    ];
+  }, [products]);
+
   const filteredProducts = useMemo(() => {
     return filterProducts(products, searchTerm, selectedCategory, sortBy);
-  }, [searchTerm, selectedCategory, sortBy]);
+  }, [products, searchTerm, selectedCategory, sortBy]);
 
   const handleAddToCart = (product) => {
     addItem(product);
   };
 
-
+  if (loading) return <div className="p-8 text-center">Loading products...</div>;
+  if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
 
   return (
     <div className="min-h-screen">
@@ -207,20 +281,29 @@ const Products = () => {
                   </div>
                 </CardContent>
 
-                                 <CardFooter className="p-6 pt-0 space-y-2">
+                                 <CardFooter className="p-6 pt-0 flex flex-col gap-2">
                    <Button asChild className="w-full">
                      <Link href={`/products/${product.id}`}>
                        View Details
                      </Link>
                    </Button>
-                   <Button 
-                     variant="outline" 
-                     className="w-full"
-                     onClick={() => handleAddToCart(product)}
-                     disabled={!product.inStock}
-                   >
-                     {product.inStock ? 'Add to Cart' : 'Out of Stock'}
-                   </Button>
+                   {product.stock > 0 ? (
+                     <Button 
+                       variant="outline" 
+                       className="w-full"
+                       onClick={() => handleAddToCart(product)}
+                     >
+                       Add to Cart
+                     </Button>
+                   ) : (
+                     <Button 
+                       variant="outline" 
+                       className="w-full"
+                       disabled
+                     >
+                       Out of Stock
+                     </Button>
+                   )}
                  </CardFooter>
                </Card>
              ))}
