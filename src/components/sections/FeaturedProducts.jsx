@@ -11,28 +11,86 @@ import { useCart } from '@/contexts/CartContext';
 
 const FeaturedProducts = () => {
   const { addItem } = useCart();
-  const [products, setProducts] = useState([]);
+  const [featuredProducts, setFeaturedProducts] = useState([]);
+  const [fallbackProducts, setFallbackProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLoading(true);
-    api.get('/products')
-      .then(res => {
-        setProducts(res.data);
+    const fetchProducts = async () => {
+      setLoading(true);
+      try {
+        // Try to fetch featured products first
+        const featuredRes = await api.get('/products/featured');
+        if (featuredRes.data && featuredRes.data.length > 0) {
+          setFeaturedProducts(featuredRes.data.slice(0, 3));
+        } else {
+          // Fallback to all products if no featured products
+          const allRes = await api.get('/products');
+          setFallbackProducts(allRes.data.slice(0, 3));
+        }
+      } catch (error) {
+        console.error('Error fetching featured products:', error);
+        // Even fallback failed, try all products
+        try {
+          const allRes = await api.get('/products');
+          setFallbackProducts(allRes.data.slice(0, 3));
+        } catch (err) {
+          console.error('Error fetching fallback products:', err);
+        }
+      } finally {
         setLoading(false);
-      })
-      .catch(() => setLoading(false));
+      }
+    };
+
+    fetchProducts();
   }, []);
 
-  // Get only featured products if available, else first 3
-  const featuredProducts = products.filter(p => p.badge === 'Best Seller' || p.featured).slice(0, 3);
-  const displayProducts = featuredProducts.length > 0 ? featuredProducts : products.slice(0, 3);
+  const displayProducts = featuredProducts.length > 0 ? featuredProducts : fallbackProducts;
 
   const handleAddToCart = (product) => {
     addItem(product);
   };
 
-  if (loading) return null;
+  const formatPrice = (price, salePrice = null) => {
+    const basePrice = parseFloat(price);
+    const salePriceNum = salePrice ? parseFloat(salePrice) : null;
+    
+    if (salePriceNum && salePriceNum < basePrice) {
+      return (
+        <div className="flex items-center space-x-2">
+          <span className="text-2xl font-bold text-green-600">₹{salePriceNum.toLocaleString()}</span>
+          <span className="text-lg text-muted-foreground line-through">₹{basePrice.toLocaleString()}</span>
+        </div>
+      );
+    }
+    
+    return <span className="text-2xl font-bold text-primary">₹{basePrice.toLocaleString()}</span>;
+  };
+
+  if (loading) {
+    return (
+      <section className="py-20 bg-muted/30">
+        <div className="container mx-auto px-4 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-serif font-bold mb-4">
+              Featured <span className="premium-text">Collections</span>
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="animate-pulse">
+                <div className="aspect-square bg-gray-200 rounded-t-lg"></div>
+                <CardContent className="p-6">
+                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                  <div className="h-6 bg-gray-200 rounded w-1/2"></div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="py-20 bg-muted/30">
@@ -42,8 +100,10 @@ const FeaturedProducts = () => {
             Featured <span className="premium-text">Collections</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Discover our most coveted pieces, each representing the pinnacle of 
-            craftsmanship and attention to detail.
+            {featuredProducts.length > 0 
+              ? "Discover our carefully curated featured products, handpicked for excellence."
+              : "Discover our most popular products, each representing quality and craftsmanship."
+            }
           </p>
         </div>
 
@@ -62,12 +122,20 @@ const FeaturedProducts = () => {
                       </div>
                     )}
                   </div>
-                  {/* Badge */}
-                  {product.badge && (
-                    <Badge className="absolute top-4 left-4" variant={product.badgeVariant || 'default'}>
-                      {product.badge}
-                    </Badge>
-                  )}
+                  {/* Badges */}
+                  <div className="absolute top-4 left-4 flex flex-col gap-2">
+                    {product.is_featured && (
+                      <Badge className="bg-blue-500">Featured</Badge>
+                    )}
+                    {product.on_sale && (
+                      <Badge className="bg-red-500">Sale</Badge>
+                    )}
+                    {product.badge && (
+                      <Badge variant={product.badgeVariant || 'default'}>
+                        {product.badge}
+                      </Badge>
+                    )}
+                  </div>
                   {/* Hover overlay */}
                   <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                     <Button asChild className="shadow-lg">
@@ -99,7 +167,7 @@ const FeaturedProducts = () => {
                     {product.description}
                   </CardDescription>
                   <div className="flex items-center space-x-2">
-                    <span className="text-2xl font-bold text-primary">{product.price}</span>
+                    {formatPrice(product.price, product.sale_price)}
                   </div>
                 </div>
               </CardContent>
@@ -131,6 +199,12 @@ const FeaturedProducts = () => {
             </Card>
           ))}
         </div>
+
+        {displayProducts.length === 0 && (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">No featured products available at the moment.</p>
+          </div>
+        )}
 
         <div className="text-center">
           <Button asChild size="lg" variant="outline">

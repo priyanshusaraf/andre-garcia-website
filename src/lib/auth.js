@@ -10,6 +10,11 @@ export async function login({ email, password }) {
   return res.data;
 }
 
+export async function adminLogin({ username, password }) {
+  const res = await api.post('/auth/admin-login', { username, password });
+  return res.data;
+}
+
 // Example: fetch user profile (requires token in headers)
 export async function fetchUserProfile(token) {
   const res = await api.get('/user/profile', {

@@ -4,6 +4,8 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { CartProvider } from '@/contexts/CartContext';
 import { AuthProvider } from '@/contexts/AuthContext';
+import Link from 'next/link';
+import AdminNavLink from '@/components/layout/AdminNavLink';
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -82,6 +84,7 @@ export default function RootLayout({ children }) {
           <CartProvider>
             <Navbar />
             <main className="flex-grow">
+              <AdminNavLink />
               {children}
             </main>
             <Footer />

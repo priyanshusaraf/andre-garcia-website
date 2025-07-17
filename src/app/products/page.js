@@ -26,9 +26,9 @@ function filterProducts(products, searchTerm, category, sortBy) {
     const search = searchTerm.toLowerCase();
     filtered = filtered.filter(product =>
       product.name.toLowerCase().includes(search) ||
-      product.description.toLowerCase().includes(search) ||
-      product.category.toLowerCase().includes(search) ||
-      product.material.toLowerCase().includes(search)
+      (product.description && product.description.toLowerCase().includes(search)) ||
+      (product.category && product.category.toLowerCase().includes(search)) ||
+      (product.quality && product.quality.toLowerCase().includes(search))
     );
   }
   if (category && category !== "All Products") {
@@ -41,16 +41,20 @@ function filterProducts(products, searchTerm, category, sortBy) {
       case "name-desc":
         return b.name.localeCompare(a.name);
       case "price-asc":
-        return parseFloat(a.price.replace('$', '').replace(',', '')) - parseFloat(b.price.replace('$', '').replace(',', ''));
+        const priceA = parseFloat(a.sale_price || a.price);
+        const priceB = parseFloat(b.sale_price || b.price);
+        return priceA - priceB;
       case "price-desc":
-        return parseFloat(b.price.replace('$', '').replace(',', '')) - parseFloat(a.price.replace('$', '').replace(',', ''));
+        const priceA2 = parseFloat(a.sale_price || a.price);
+        const priceB2 = parseFloat(b.sale_price || b.price);
+        return priceB2 - priceA2;
       case "rating":
-        return b.rating - a.rating;
+        return (b.rating || 0) - (a.rating || 0);
       case "newest":
-        return b.id - a.id;
+        return new Date(b.created_at || 0) - new Date(a.created_at || 0);
       case "featured":
       default:
-        return b.featured ? 1 : -1;
+        return (b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0);
     }
   });
   return filtered;
@@ -82,7 +86,8 @@ const Products = () => {
   // Derive categories from products
   const categories = useMemo(() => {
     const cats = products.reduce((acc, p) => {
-      acc[p.category] = (acc[p.category] || 0) + 1;
+      const category = p.category || 'Uncategorized';
+      acc[category] = (acc[category] || 0) + 1;
       return acc;
     }, {});
     return [
@@ -97,6 +102,22 @@ const Products = () => {
 
   const handleAddToCart = (product) => {
     addItem(product);
+  };
+
+  const formatPrice = (price, salePrice = null) => {
+    const basePrice = parseFloat(price);
+    const salePriceNum = salePrice ? parseFloat(salePrice) : null;
+    
+    if (salePriceNum && salePriceNum < basePrice) {
+      return (
+        <div className="flex items-center space-x-2">
+          <span className="text-2xl font-bold text-green-600">₹{salePriceNum.toLocaleString()}</span>
+          <span className="text-lg text-muted-foreground line-through">₹{basePrice.toLocaleString()}</span>
+        </div>
+      );
+    }
+    
+    return <span className="text-2xl font-bold text-primary">₹{basePrice.toLocaleString()}</span>;
   };
 
   if (loading) return <div className="p-8 text-center">Loading products...</div>;
@@ -210,19 +231,31 @@ const Products = () => {
               <Card key={product.id} className="group hover:shadow-luxury transition-all duration-300 border-border/50 bg-card">
                 <CardHeader className="p-0">
                   <div className="relative overflow-hidden rounded-t-lg">
-                    {/* Product Image Placeholder */}
+                    {/* Product Image */}
                     <div className="aspect-square bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center">
-                      <div className="w-32 h-32 bg-primary/20 rounded-lg flex items-center justify-center">
-                        <div className="w-20 h-20 bg-primary/30 rounded"></div>
-                      </div>
+                      {product.image_url ? (
+                        <img src={product.image_url} alt={product.name} className="w-32 h-32 object-cover rounded-lg" />
+                      ) : (
+                        <div className="w-32 h-32 bg-primary/20 rounded-lg flex items-center justify-center">
+                          <div className="w-20 h-20 bg-primary/30 rounded"></div>
+                        </div>
+                      )}
                     </div>
                     
-                    {/* Badge */}
-                    {product.badge && (
-                      <Badge className="absolute top-4 left-4" variant={product.badgeVariant}>
-                        {product.badge}
-                      </Badge>
-                    )}
+                    {/* Badges */}
+                    <div className="absolute top-4 left-4 flex flex-col gap-2">
+                      {product.is_featured && (
+                        <Badge className="bg-blue-500">Featured</Badge>
+                      )}
+                      {product.on_sale && (
+                        <Badge className="bg-red-500">Sale</Badge>
+                      )}
+                      {product.badge && (
+                        <Badge variant={product.badgeVariant || 'default'}>
+                          {product.badge}
+                        </Badge>
+                      )}
+                    </div>
 
                     {/* Hover overlay */}
                     <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
@@ -239,15 +272,15 @@ const Products = () => {
                 <CardContent className="p-6">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">{product.category}</span>
+                      <span className="text-sm text-muted-foreground">{product.category || 'Uncategorized'}</span>
                       <div className="flex items-center space-x-1">
                         {[...Array(5)].map((_, i) => (
                           <Star 
                             key={i} 
-                            className={`h-4 w-4 ${i < Math.floor(product.rating) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} 
+                            className={`h-4 w-4 ${i < Math.floor(product.rating || 0) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} 
                           />
                         ))}
-                        <span className="text-sm text-muted-foreground ml-1">({product.reviews})</span>
+                        <span className="text-sm text-muted-foreground ml-1">({product.reviews || 0})</span>
                       </div>
                     </div>
                     
@@ -258,67 +291,78 @@ const Products = () => {
                     
                     {/* Specifications */}
                     <div className="space-y-1 text-sm">
+                      {product.capacity && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Capacity:</span>
+                          <span>{product.capacity}</span>
+                        </div>
+                      )}
+                      {product.quality && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Quality:</span>
+                          <span>{product.quality}</span>
+                        </div>
+                      )}
+                      {product.size && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Size:</span>
+                          <span>{product.size}</span>
+                        </div>
+                      )}
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Capacity:</span>
-                        <span>{product.capacity}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Material:</span>
-                        <span>{product.material}</span>
+                        <span className="text-muted-foreground">Stock:</span>
+                        <span className={product.stock > 0 ? 'text-green-600' : 'text-red-600'}>
+                          {product.stock > 0 ? `${product.stock} available` : 'Out of stock'}
+                        </span>
                       </div>
                     </div>
 
                     <Separator className="my-4" />
                     
                     <div className="flex items-center space-x-2">
-                      <span className="text-2xl font-bold text-primary">{product.price}</span>
-                      {product.originalPrice && (
-                        <span className="text-lg text-muted-foreground line-through">
-                          {product.originalPrice}
-                        </span>
-                      )}
+                      {formatPrice(product.price, product.sale_price)}
                     </div>
                   </div>
                 </CardContent>
 
-                                 <CardFooter className="p-6 pt-0 flex flex-col gap-2">
-                   <Button asChild className="w-full">
-                     <Link href={`/products/${product.id}`}>
-                       View Details
-                     </Link>
-                   </Button>
-                   {product.stock > 0 ? (
-                     <Button 
-                       variant="outline" 
-                       className="w-full"
-                       onClick={() => handleAddToCart(product)}
-                     >
-                       Add to Cart
-                     </Button>
-                   ) : (
-                     <Button 
-                       variant="outline" 
-                       className="w-full"
-                       disabled
-                     >
-                       Out of Stock
-                     </Button>
-                   )}
-                 </CardFooter>
-               </Card>
-             ))}
-           </div>
-           )}
+                <CardFooter className="p-6 pt-0 flex flex-col gap-2">
+                  <Button asChild className="w-full">
+                    <Link href={`/products/${product.id}`}>
+                      View Details
+                    </Link>
+                  </Button>
+                  {product.stock > 0 ? (
+                    <Button 
+                      variant="outline" 
+                      className="w-full"
+                      onClick={() => handleAddToCart(product)}
+                    >
+                      Add to Cart
+                    </Button>
+                  ) : (
+                    <Button 
+                      variant="outline" 
+                      className="w-full"
+                      disabled
+                    >
+                      Out of Stock
+                    </Button>
+                  )}
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+          )}
 
-           {/* Pagination or Load More could go here */}
-           {filteredProducts.length > 0 && (
-             <div className="text-center mt-12">
-               <p className="text-sm text-muted-foreground">
-                 Showing all {filteredProducts.length} results
-               </p>
-             </div>
-           )}
-         </div>
+          {/* Pagination or Load More could go here */}
+          {filteredProducts.length > 0 && (
+            <div className="text-center mt-12">
+              <p className="text-sm text-muted-foreground">
+                Showing all {filteredProducts.length} results
+              </p>
+            </div>
+          )}
+        </div>
       </section>
 
       {/* Features Section */}
@@ -331,7 +375,7 @@ const Products = () => {
               </div>
               <h3 className="font-serif text-xl font-semibold">Free Shipping</h3>
               <p className="text-muted-foreground text-sm">
-                Complimentary shipping on orders over $500
+                Complimentary shipping on orders over ₹500
               </p>
             </div>
             <div className="space-y-4">

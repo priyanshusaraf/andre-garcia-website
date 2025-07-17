@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { register as apiRegister, login as apiLogin, fetchUserProfile } from '../lib/auth';
+import { register as apiRegister, login as apiLogin, adminLogin as apiAdminLogin, fetchUserProfile } from '../lib/auth';
 
 const AuthContext = createContext();
 
@@ -50,6 +50,13 @@ export function AuthProvider({ children }) {
       setIsLoading(false);
       return;
     }
+    
+    // Skip backend verification for super admin tokens
+    if (user?.is_super_admin) {
+      setIsLoading(false);
+      return;
+    }
+    
     setIsLoading(true);
     fetchUserProfile(token)
       .then((profile) => {
@@ -69,6 +76,20 @@ export function AuthProvider({ children }) {
     try {
       setIsLoading(true);
       const { token: newToken, user: newUser } = await apiLogin(credentials);
+      setToken(newToken);
+      setUser(newUser);
+      setIsLoading(false);
+      return { success: true };
+    } catch (error) {
+      setIsLoading(false);
+      return { success: false, error: error.response?.data?.message || error.message };
+    }
+  };
+
+  const adminLogin = async (credentials) => {
+    try {
+      setIsLoading(true);
+      const { token: newToken, user: newUser } = await apiAdminLogin(credentials);
       setToken(newToken);
       setUser(newUser);
       setIsLoading(false);
@@ -99,6 +120,8 @@ export function AuthProvider({ children }) {
   // Allow manual refresh of user profile
   const refreshUser = async () => {
     if (!token) return;
+    if (user?.is_super_admin) return; // Skip for super admin
+    
     setIsLoading(true);
     try {
       const profile = await fetchUserProfile(token);
@@ -117,8 +140,11 @@ export function AuthProvider({ children }) {
     user,
     isLoading,
     isAuthenticated: !!user && !!token,
+    isAdmin: user?.is_admin === true,
+    isSuperAdmin: user?.is_super_admin === true,
     token,
     login,
+    adminLogin,
     logout,
     register,
     refreshUser,
@@ -127,10 +153,10 @@ export function AuthProvider({ children }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-export function useAuth() {
+export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-} 
+}; 
