@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -62,6 +63,8 @@ function filterProducts(products, searchTerm, category, sortBy) {
 
 const Products = () => {
   const { addItem } = useCart();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -69,6 +72,49 @@ const Products = () => {
   const [selectedCategory, setSelectedCategory] = useState('All Products');
   const [sortBy, setSortBy] = useState('featured');
   const [viewMode, setViewMode] = useState('grid');
+
+  // Read URL parameters on mount
+  useEffect(() => {
+    const urlSearch = searchParams.get('search');
+    const urlCategory = searchParams.get('category');
+    
+    if (urlSearch) {
+      setSearchTerm(urlSearch);
+    }
+    
+    if (urlCategory) {
+      // Convert URL category to display format
+      const categoryMap = {
+        'humidors': 'Humidors',
+        'travel-cases': 'Travel Cases',
+        'accessories': 'Accessories'
+      };
+      setSelectedCategory(categoryMap[urlCategory] || urlCategory);
+    }
+  }, [searchParams]);
+
+  // Update URL when search or category changes
+  const updateURL = (newSearch, newCategory) => {
+    const params = new URLSearchParams();
+    
+    if (newSearch && newSearch.trim()) {
+      params.set('search', newSearch.trim());
+    }
+    
+    if (newCategory && newCategory !== 'All Products') {
+      // Convert display format to URL format
+      const urlCategoryMap = {
+        'Humidors': 'humidors',
+        'Travel Cases': 'travel-cases', 
+        'Accessories': 'accessories'
+      };
+      const urlCategory = urlCategoryMap[newCategory] || newCategory.toLowerCase().replace(/\s+/g, '-');
+      params.set('category', urlCategory);
+    }
+
+    const newURL = params.toString() ? `?${params.toString()}` : '/products';
+    router.replace(`/products${newURL}`, { scroll: false });
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -102,6 +148,16 @@ const Products = () => {
 
   const handleAddToCart = (product) => {
     addItem(product);
+  };
+
+  const handleSearchChange = (newSearchTerm) => {
+    setSearchTerm(newSearchTerm);
+    updateURL(newSearchTerm, selectedCategory);
+  };
+
+  const handleCategoryChange = (newCategory) => {
+    setSelectedCategory(newCategory);
+    updateURL(searchTerm, newCategory);
   };
 
   const formatPrice = (price, salePrice = null) => {
@@ -153,7 +209,7 @@ const Products = () => {
                   variant={selectedCategory === category.name ? "default" : "outline"}
                   size="sm"
                   className="text-sm"
-                  onClick={() => setSelectedCategory(category.name)}
+                  onClick={() => handleCategoryChange(category.name)}
                 >
                   {category.name} ({category.count})
                 </Button>
@@ -168,7 +224,7 @@ const Products = () => {
                   type="text"
                   placeholder="Search products..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => handleSearchChange(e.target.value)}
                   className="pl-10 pr-4 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
               </div>

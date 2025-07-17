@@ -1,19 +1,43 @@
 'use client';
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger } from '@/components/ui/navigation-menu';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Search, User, LogOut } from 'lucide-react';
+import { Menu, Search, User, LogOut, X } from 'lucide-react';
 import CartSheet from '@/components/cart/CartSheet';
 import { useAuth } from '@/contexts/AuthContext';
 
 const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
+  const router = useRouter();
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const handleLogout = async () => {
     await logout();
   };
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
+      setIsSearchOpen(false);
+      setSearchQuery('');
+    }
+  };
+
+  const handleSearchToggle = () => {
+    setIsSearchOpen(!isSearchOpen);
+    if (!isSearchOpen) {
+      // Focus the search input after it appears
+      setTimeout(() => {
+        document.getElementById('navbar-search')?.focus();
+      }, 100);
+    }
+  };
+
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4 lg:px-8">
@@ -94,9 +118,41 @@ const Navbar = () => {
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center space-x-4">
-            <Button variant="ghost" size="icon">
-              <Search className="h-5 w-5" />
-            </Button>
+            {/* Search */}
+            <div className="relative">
+              {isSearchOpen ? (
+                <form onSubmit={handleSearchSubmit} className="flex items-center">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <input
+                      id="navbar-search"
+                      type="text"
+                      placeholder="Search products..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10 pr-4 py-2 w-64 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      autoComplete="off"
+                    />
+                  </div>
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="icon" 
+                    className="ml-2"
+                    onClick={() => {
+                      setIsSearchOpen(false);
+                      setSearchQuery('');
+                    }}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </form>
+              ) : (
+                <Button variant="ghost" size="icon" onClick={handleSearchToggle}>
+                  <Search className="h-5 w-5" />
+                </Button>
+              )}
+            </div>
             
             {/* User Authentication */}
             {isAuthenticated ? (
@@ -148,9 +204,23 @@ const Navbar = () => {
                     Contact
                   </Link>
                   <div className="flex flex-col space-y-4 pt-4 border-t">
-                    <Button variant="ghost" size="icon" className="self-start">
-                      <Search className="h-5 w-5" />
-                    </Button>
+                    {/* Mobile Search */}
+                    <form onSubmit={handleSearchSubmit} className="flex items-center space-x-2">
+                      <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <input
+                          type="text"
+                          placeholder="Search products..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="pl-10 pr-4 py-2 w-full border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                          autoComplete="off"
+                        />
+                      </div>
+                      <Button type="submit" size="sm">
+                        Search
+                      </Button>
+                    </form>
                     
                     {/* Mobile User Authentication */}
                     {isAuthenticated ? (
