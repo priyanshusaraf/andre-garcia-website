@@ -3,8 +3,9 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Shield, Award, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+import api from '@/lib/utils';
 
-const carouselImages = [
+const defaultCarouselImages = [
   'https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=1500&q=80',
   'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1500&q=80',
   'https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=1500&q=80',
@@ -12,12 +13,37 @@ const carouselImages = [
 
 const Hero = () => {
   const [current, setCurrent] = useState(0);
+  const [carouselImages, setCarouselImages] = useState(defaultCarouselImages);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchHeroImages = async () => {
+      try {
+        const res = await api.get('/products/hero-images');
+        if (res.data && res.data.length > 0) {
+          // Filter active hero images
+          const activeImages = res.data.filter(image => image.active && image.url);
+          if (activeImages.length > 0) {
+            setCarouselImages(activeImages.map(image => image.url));
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching hero images:', error);
+        // Keep default images on error
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHeroImages();
+  }, []);
+
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrent((prev) => (prev + 1) % carouselImages.length);
     }, 10000);
     return () => clearInterval(interval);
-  }, []);
+  }, [carouselImages.length]);
   const prevSlide = () => setCurrent((prev) => (prev - 1 + carouselImages.length) % carouselImages.length);
   const nextSlide = () => setCurrent((prev) => (prev + 1) % carouselImages.length);
   return (

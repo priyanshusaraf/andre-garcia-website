@@ -97,6 +97,18 @@ const ProductDetail = () => {
                     </Badge>
                   )}
                 </div>
+                <div className="flex items-center gap-2 mb-4">
+                  {product.is_featured && (
+                    <Badge className="bg-blue-500">Featured</Badge>
+                  )}
+                  {product.is_new && (
+                    <Badge className="bg-green-500">New</Badge>
+                  )}
+                  {product.on_sale && (
+                    <Badge className="bg-red-500">Sale</Badge>
+                  )}
+                </div>
+                
                 <h1 className="text-3xl font-serif font-bold mb-4">{product.name}</h1>
                 
                 <div className="flex items-center space-x-2 mb-4">

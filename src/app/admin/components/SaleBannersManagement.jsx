@@ -6,6 +6,7 @@ import { Button } from '../../../components/ui/button';
 import { Badge } from '../../../components/ui/badge';
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
+import { ImageUpload } from '../../../components/ui/image-upload';
 import api from '../../../lib/utils';
 
 function BannerCard({ banner, onEdit, onDelete, onToggleActive, isLoading }) {
@@ -162,14 +163,11 @@ function BannerForm({ banner, onSave, onCancel, isLoading }) {
           </div>
           
           <div>
-            <Label htmlFor="image_url">Banner Image URL</Label>
-            <Input
-              id="image_url"
-              name="image_url"
-              type="url"
-              value={formData.image_url}
-              onChange={handleChange}
-              placeholder="https://example.com/banner-image.jpg"
+            <ImageUpload
+              label="Banner Image"
+              currentImage={formData.image_url}
+              onImageUploaded={(imageUrl) => setFormData(prev => ({ ...prev, image_url: imageUrl || '' }))}
+              uploadType="banner"
             />
           </div>
           

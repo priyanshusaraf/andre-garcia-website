@@ -232,9 +232,9 @@ const Products = () => {
                 <CardHeader className="p-0">
                   <div className="relative overflow-hidden rounded-t-lg">
                     {/* Product Image */}
-                    <div className="aspect-square bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center">
+                    <div className="aspect-square bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center overflow-hidden">
                       {product.image_url ? (
-                        <img src={product.image_url} alt={product.name} className="w-32 h-32 object-cover rounded-lg" />
+                        <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-32 h-32 bg-primary/20 rounded-lg flex items-center justify-center">
                           <div className="w-20 h-20 bg-primary/30 rounded"></div>
@@ -246,6 +246,9 @@ const Products = () => {
                     <div className="absolute top-4 left-4 flex flex-col gap-2">
                       {product.is_featured && (
                         <Badge className="bg-blue-500">Featured</Badge>
+                      )}
+                      {product.is_new && (
+                        <Badge className="bg-green-500">New</Badge>
                       )}
                       {product.on_sale && (
                         <Badge className="bg-red-500">Sale</Badge>

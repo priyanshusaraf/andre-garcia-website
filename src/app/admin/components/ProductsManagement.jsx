@@ -7,9 +7,10 @@ import { Badge } from '../../../components/ui/badge';
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../../components/ui/tabs';
+import { ImageUpload } from '../../../components/ui/image-upload';
 import api from '../../../lib/utils';
 
-function ProductCard({ product, onEdit, onDelete, onToggleFeatured, onSetSale, isLoading }) {
+function ProductCard({ product, onEdit, onDelete, onToggleFeatured, onToggleNew, onSetSale, isLoading }) {
   const [saleForm, setSaleForm] = useState({
     discount_percent: product.discount_percent || '',
     sale_start_date: product.sale_start_date ? new Date(product.sale_start_date).toISOString().slice(0, 16) : '',
@@ -34,7 +35,7 @@ function ProductCard({ product, onEdit, onDelete, onToggleFeatured, onSetSale, i
             <img 
               src={product.image_url} 
               alt={product.name}
-              className="w-20 h-20 object-cover rounded"
+              className="w-20 h-20 object-cover rounded border"
             />
           )}
           <div className="flex-1">
@@ -43,6 +44,9 @@ function ProductCard({ product, onEdit, onDelete, onToggleFeatured, onSetSale, i
               <div className="flex gap-1">
                 {product.is_featured && (
                   <Badge variant="default">Featured</Badge>
+                )}
+                {product.is_new && (
+                  <Badge variant="secondary">New</Badge>
                 )}
                 {product.on_sale && (
                   <Badge variant="destructive">Sale</Badge>
@@ -78,6 +82,14 @@ function ProductCard({ product, onEdit, onDelete, onToggleFeatured, onSetSale, i
                   disabled={isLoading}
                 >
                   {product.is_featured ? "Unfeature" : "Feature"}
+                </Button>
+                <Button
+                  size="sm"
+                  variant={product.is_new ? "secondary" : "outline"}
+                  onClick={() => onToggleNew(product.id, !product.is_new)}
+                  disabled={isLoading}
+                >
+                  {product.is_new ? "Mark Old" : "Mark New"}
                 </Button>
                 <Button
                   size="sm"
@@ -274,14 +286,12 @@ function ProductForm({ product, onSave, onCancel, isLoading }) {
                 onChange={handleChange}
               />
             </div>
-            <div>
-              <Label htmlFor="image_url">Image URL</Label>
-              <Input
-                id="image_url"
-                name="image_url"
-                type="url"
-                value={formData.image_url}
-                onChange={handleChange}
+            <div className="md:col-span-2">
+              <ImageUpload
+                label="Product Image"
+                currentImage={formData.image_url}
+                onImageUploaded={(imageUrl) => setFormData(prev => ({ ...prev, image_url: imageUrl || '' }))}
+                uploadType="product"
               />
             </div>
             <div>
@@ -439,6 +449,20 @@ export default function ProductsManagement({ token }) {
     }
   };
 
+  const handleToggleNew = async (id, isNew) => {
+    setIsLoading(true);
+    try {
+      await api.patch(`/admin/products/${id}/new`, { is_new: isNew }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      await fetchProducts();
+    } catch (err) {
+      alert(err.response?.data?.message || err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSetSale = async (id, saleData) => {
     setIsLoading(true);
     try {
@@ -512,9 +536,10 @@ export default function ProductsManagement({ token }) {
             product={product}
             onEdit={setEditingProduct}
             onDelete={handleDeleteProduct}
-            onToggleFeatured={handleToggleFeatured}
-            onSetSale={handleSetSale}
-            isLoading={isLoading}
+                          onToggleFeatured={handleToggleFeatured}
+              onToggleNew={handleToggleNew}
+              onSetSale={handleSetSale}
+              isLoading={isLoading}
           />
         ))}
       </div>
