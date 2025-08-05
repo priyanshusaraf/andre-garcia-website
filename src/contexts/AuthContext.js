@@ -109,8 +109,17 @@ export function AuthProvider({ children }) {
     try {
       setIsLoading(true);
       const data = await apiRegister(userData);
+      
+      // Auto-login after successful registration
+      if (data.token && data.user) {
+        setToken(data.token);
+        setUser(data.user);
+        setIsLoading(false);
+        return { success: true, data, autoLoggedIn: true };
+      }
+      
       setIsLoading(false);
-      return { success: true, data };
+      return { success: true, data, autoLoggedIn: false };
     } catch (error) {
       setIsLoading(false);
       return { success: false, error: error.response?.data?.message || error.message };

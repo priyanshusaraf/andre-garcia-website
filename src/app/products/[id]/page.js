@@ -79,10 +79,18 @@ const ProductDetail = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             {/* Product Image */}
             <div className="space-y-4">
-              <div className="aspect-square bg-gradient-to-br from-primary/20 to-secondary/20 rounded-lg flex items-center justify-center shadow-luxury">
-                <div className="w-64 h-64 bg-primary/20 rounded-lg flex items-center justify-center">
-                  <div className="w-40 h-40 bg-primary/30 rounded"></div>
-                </div>
+              <div className="aspect-square bg-gradient-to-br from-primary/20 to-secondary/20 rounded-lg flex items-center justify-center shadow-luxury overflow-hidden">
+                {product.image_url ? (
+                  <img 
+                    src={product.image_url} 
+                    alt={product.name} 
+                    className="w-full h-full object-cover rounded-lg"
+                  />
+                ) : (
+                  <div className="w-64 h-64 bg-primary/20 rounded-lg flex items-center justify-center">
+                    <div className="w-40 h-40 bg-primary/30 rounded"></div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -125,11 +133,13 @@ const ProductDetail = () => {
                 </div>
 
                 <div className="flex items-center space-x-3 mb-6">
-                  <span className="text-3xl font-bold text-primary">{product.price}</span>
-                  {product.originalPrice && (
-                    <span className="text-xl text-muted-foreground line-through">
-                      {product.originalPrice}
-                    </span>
+                  {product.sale_price && parseFloat(product.sale_price) < parseFloat(product.price) ? (
+                    <>
+                      <span className="text-3xl font-bold text-green-600">₹{parseFloat(product.sale_price).toLocaleString()}</span>
+                      <span className="text-xl text-muted-foreground line-through">₹{parseFloat(product.price).toLocaleString()}</span>
+                    </>
+                  ) : (
+                    <span className="text-3xl font-bold text-primary">₹{parseFloat(product.price).toLocaleString()}</span>
                   )}
                 </div>
               </div>
@@ -187,13 +197,24 @@ const ProductDetail = () => {
                     className="flex-1" 
                     size="lg"
                     onClick={handleAddToCart}
-                    disabled={!product.inStock}
+                    disabled={!product.stock || product.stock <= 0}
                   >
-                    {product.inStock ? 'Add to Cart' : 'Out of Stock'}
+                    {product.stock && product.stock > 0 ? 'Add to Cart' : 'Out of Stock'}
                   </Button>
                   <Button variant="outline" size="lg">
                     <Heart className="h-4 w-4" />
                   </Button>
+                </div>
+
+                {/* Stock Status Display */}
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Stock Status:</span>
+                  <span className={`font-medium ${product.stock && product.stock > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {product.stock && product.stock > 0 
+                      ? `${product.stock} available` 
+                      : 'Out of stock'
+                    }
+                  </span>
                 </div>
               </div>
 

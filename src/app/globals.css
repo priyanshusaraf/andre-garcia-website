@@ -128,6 +128,8 @@
   
   html {
     overflow-x: hidden;
+    /* Ensure smooth scrolling and proper sticky behavior */
+    scroll-behavior: smooth;
   }
   
   body {
@@ -135,6 +137,8 @@
     font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
     overflow-x: hidden;
     max-width: 100vw;
+    /* Ensure body doesn't interfere with sticky positioning */
+    position: relative;
   }
   
   h1, h2, h3, h4, h5, h6 {
@@ -218,6 +222,45 @@
       opacity: 1;
       transform: translateY(0);
     }
+  }
+
+  /* Cart shake animation */
+  .cart-shake {
+    animation: cartShake 0.6s ease-in-out;
+  }
+  
+  @keyframes cartShake {
+    0%, 100% {
+      transform: translateX(0);
+    }
+    10%, 30%, 50%, 70%, 90% {
+      transform: translateX(-2px);
+    }
+    20%, 40%, 60%, 80% {
+      transform: translateX(2px);
+    }
+  }
+
+  /* Enhanced navbar sticky positioning */
+  .navbar-sticky {
+    position: sticky;
+    top: 0;
+    z-index: 9999;
+    background: rgba(250, 248, 245, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    transition: all 0.2s ease-in-out;
+  }
+
+  .dark .navbar-sticky {
+    background: rgba(26, 20, 16, 0.95);
+  }
+
+  /* Ensure proper stacking context */
+  .sticky-wrapper {
+    position: relative;
+    z-index: 50;
   }
   
   /* Scrollbar Styling */

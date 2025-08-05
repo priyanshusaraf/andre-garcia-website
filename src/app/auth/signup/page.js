@@ -93,7 +93,13 @@ export default function SignUp() {
       });
 
       if (result.success) {
-        setIsSuccess(true);
+        if (result.autoLoggedIn) {
+          // User was automatically logged in, redirect to home
+          router.push('/');
+        } else {
+          // Fallback to success page if auto-login failed
+          setIsSuccess(true);
+        }
       } else {
         setErrors({ submit: result.error || 'Registration failed' });
       }

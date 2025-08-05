@@ -1,15 +1,31 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ShoppingBag, Plus, Minus, X, ShoppingCart } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
+import Link from 'next/link';
 
 const CartSheet = () => {
   const { items, itemCount, totalPrice, addItem, removeItem, updateQuantity, clearCart } = useCart();
+  const [isShaking, setIsShaking] = useState(false);
+  const [prevItemCount, setPrevItemCount] = useState(0);
+
+  // Trigger shake animation when items are added
+  useEffect(() => {
+    if (itemCount > prevItemCount && prevItemCount > 0) {
+      setIsShaking(true);
+      // Remove shake class after animation completes
+      const timer = setTimeout(() => {
+        setIsShaking(false);
+      }, 600);
+      return () => clearTimeout(timer);
+    }
+    setPrevItemCount(itemCount);
+  }, [itemCount, prevItemCount]);
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('en-US', {
@@ -21,7 +37,7 @@ const CartSheet = () => {
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
+        <Button variant="ghost" size="icon" className={`relative ${isShaking ? 'cart-shake' : ''}`}>
           <ShoppingBag className="h-5 w-5" />
           {itemCount > 0 && (
             <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs">
@@ -124,8 +140,10 @@ const CartSheet = () => {
 
                 {/* Action Buttons */}
                 <div className="space-y-2">
-                  <Button className="w-full" size="lg">
-                    Proceed to Checkout
+                  <Button className="w-full" size="lg" asChild>
+                    <Link href="/checkout">
+                      Proceed to Checkout
+                    </Link>
                   </Button>
                   <Button 
                     variant="outline" 
