@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../contexts/AuthContext';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/card';
@@ -17,10 +17,11 @@ export default function AdminLogin() {
   const router = useRouter();
 
   // Redirect if already authenticated as admin
-  if (isAuthenticated && isSuperAdmin) {
-    router.push('/admin');
-    return null;
-  }
+  useEffect(() => {
+    if (isAuthenticated && isSuperAdmin) {
+      router.push('/admin');
+    }
+  }, [isAuthenticated, isSuperAdmin, router]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

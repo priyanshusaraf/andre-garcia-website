@@ -8,11 +8,14 @@ import { Separator } from '@/components/ui/separator';
 import { ShoppingBag, Plus, Minus, X, ShoppingCart } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 const CartSheet = () => {
   const { items, itemCount, totalPrice, addItem, removeItem, updateQuantity, clearCart } = useCart();
   const [isShaking, setIsShaking] = useState(false);
   const [prevItemCount, setPrevItemCount] = useState(0);
+  const [isOpen, setIsOpen] = useState(false);
+  const router = useRouter();
 
   // Trigger shake animation when items are added
   useEffect(() => {
@@ -34,8 +37,19 @@ const CartSheet = () => {
     }).format(price);
   };
 
+  const handleCheckout = () => {
+    setIsOpen(false);
+    router.push('/checkout');
+  };
+
+  const handleClearCart = () => {
+    clearCart();
+    setIsOpen(false);
+    router.push('/products');
+  };
+
   return (
-    <Sheet>
+    <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
         <Button variant="ghost" size="icon" className={`relative ${isShaking ? 'cart-shake' : ''}`}>
           <ShoppingBag className="h-5 w-5" />
@@ -48,14 +62,14 @@ const CartSheet = () => {
       </SheetTrigger>
       
       <SheetContent className="w-full sm:max-w-lg">
-        <SheetHeader>
+        <SheetHeader className="px-1">
           <SheetTitle className="flex items-center gap-2">
             <ShoppingCart className="h-5 w-5" />
             Shopping Cart ({itemCount} items)
           </SheetTitle>
         </SheetHeader>
 
-        <div className="flex flex-col h-full mt-6">
+        <div className="flex flex-col h-full mt-6 px-1">
           {items.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center text-center space-y-4">
               <ShoppingBag className="h-16 w-16 text-muted-foreground" />
@@ -64,6 +78,18 @@ const CartSheet = () => {
                 <p className="text-muted-foreground text-sm">
                   Add some premium cigar containers to get started
                 </p>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" asChild>
+                  <Link href="/products">
+                    Browse Products
+                  </Link>
+                </Button>
+                <Button size="sm" asChild>
+                  <Link href="/orders">
+                    View Orders
+                  </Link>
+                </Button>
               </div>
             </div>
           ) : (
@@ -139,16 +165,18 @@ const CartSheet = () => {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="space-y-2">
-                  <Button className="w-full" size="lg" asChild>
-                    <Link href="/checkout">
-                      Proceed to Checkout
-                    </Link>
+                <div className="space-y-3 pt-2">
+                  <Button 
+                    className="w-full" 
+                    size="lg"
+                    onClick={handleCheckout}
+                  >
+                    Proceed to Checkout
                   </Button>
                   <Button 
                     variant="outline" 
                     className="w-full"
-                    onClick={clearCart}
+                    onClick={handleClearCart}
                   >
                     Clear Cart
                   </Button>

@@ -65,6 +65,7 @@ const OrdersManagement = () => {
 
   const [updateForm, setUpdateForm] = useState({
     status: 'pending',
+    trackingNumber: '',
     notes: ''
   });
 
@@ -81,14 +82,13 @@ const OrdersManagement = () => {
       params.append('page', filters.page.toString());
       params.append('limit', filters.limit.toString());
 
-      const response = await api.get(`/payment/admin/orders?${params.toString()}`, {
+      const response = await api.get(`/admin/orders?${params.toString()}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
-      if (response.data.success) {
-        setOrders(response.data.orders);
-        setStats(prev => ({ ...prev, ...response.data.stats }));
-      }
+      // The backend returns orders directly, not wrapped in success/orders
+      setOrders(response.data);
+      // Stats are handled separately
     } catch (error) {
       console.error('Fetch orders error:', error);
       setError('Failed to fetch orders');
@@ -99,13 +99,12 @@ const OrdersManagement = () => {
 
   const fetchDashboardStats = async () => {
     try {
-      const response = await api.get('/payment/admin/dashboard-stats', {
+      const response = await api.get('/admin/stats', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
-      if (response.data.success) {
-        setStats(prev => ({ ...prev, ...response.data.stats }));
-      }
+      // The backend returns stats directly
+      setStats(prev => ({ ...prev, ...response.data }));
     } catch (error) {
       console.error('Fetch stats error:', error);
     }
@@ -114,23 +113,56 @@ const OrdersManagement = () => {
   const handleUpdateOrder = async () => {
     if (!selectedOrder) return;
 
+    // Validate tracking number for in_transit status
+    if (updateForm.status === 'in_transit' && !updateForm.trackingNumber.trim()) {
+      setError('Tracking number is required when status is In Transit');
+      return;
+    }
+
     try {
       setUpdateLoading(true);
-      const response = await api.put(`/payment/admin/orders/${selectedOrder.id}`, updateForm, {
+      // Only send the fields that the backend expects
+      const requestData = {
+        status: updateForm.status
+      };
+      
+      // Only include tracking number if it's not empty
+      if (updateForm.trackingNumber && updateForm.trackingNumber.trim() !== '') {
+        requestData.trackingNumber = updateForm.trackingNumber;
+      }
+      
+      console.log('Sending request data:', requestData);
+      console.log('Selected order ID:', selectedOrder.id);
+      console.log('Current order status:', selectedOrder.status);
+      console.log('New status being sent:', updateForm.status);
+      
+      const response = await api.patch(`/admin/orders/${selectedOrder.id}`, requestData, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
-      if (response.data.success) {
-        // Update the order in the list
-        setOrders(orders.map(order => 
-          order.id === selectedOrder.id ? response.data.order : order
-        ));
-        setSelectedOrder(null);
-        setUpdateForm({ status: 'pending', notes: '' });
-      }
+      // Update the order in the list
+      setOrders(orders.map(order => 
+        order.id === selectedOrder.id ? response.data.order : order
+      ));
+      setSelectedOrder(null);
+      setUpdateForm({ status: 'pending', trackingNumber: '', notes: '' });
+      setError(''); // Clear any previous errors
     } catch (error) {
       console.error('Update order error:', error);
-      setError('Failed to update order');
+      console.error('Error response:', error.response);
+      console.error('Error status:', error.response?.status);
+      console.error('Error data:', error.response?.data);
+      
+      // Show more specific error messages
+      if (error.response?.status === 400) {
+        setError(error.response?.data?.message || 'Invalid request data');
+      } else if (error.response?.status === 404) {
+        setError('Order not found');
+      } else if (error.response?.status === 500) {
+        setError('Server error. Please try again.');
+      } else {
+        setError(error.response?.data?.message || 'Failed to update order');
+      }
     } finally {
       setUpdateLoading(false);
     }
@@ -150,16 +182,14 @@ const OrdersManagement = () => {
     switch (status) {
       case 'pending':
         return <Clock className="h-4 w-4 text-yellow-500" />;
+      case 'rejected':
+        return <XCircle className="h-4 w-4 text-red-500" />;
+      case 'in_transit':
+        return <Truck className="h-4 w-4 text-blue-500" />;
+      case 'completed':
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
       case 'confirmed':
         return <CheckCircle className="h-4 w-4 text-blue-500" />;
-      case 'processing':
-        return <Package className="h-4 w-4 text-blue-600" />;
-      case 'shipped':
-        return <Truck className="h-4 w-4 text-purple-500" />;
-      case 'delivered':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'cancelled':
-        return <XCircle className="h-4 w-4 text-red-500" />;
       default:
         return <AlertCircle className="h-4 w-4 text-gray-500" />;
     }
@@ -169,16 +199,14 @@ const OrdersManagement = () => {
     switch (status) {
       case 'pending':
         return 'bg-yellow-100 text-yellow-800';
+      case 'rejected':
+        return 'bg-red-100 text-red-800';
+      case 'in_transit':
+        return 'bg-blue-100 text-blue-800';
+      case 'completed':
+        return 'bg-green-100 text-green-800';
       case 'confirmed':
         return 'bg-blue-100 text-blue-800';
-      case 'processing':
-        return 'bg-blue-100 text-blue-800';
-      case 'shipped':
-        return 'bg-purple-100 text-purple-800';
-      case 'delivered':
-        return 'bg-green-100 text-green-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -268,11 +296,9 @@ const OrdersManagement = () => {
                 <SelectContent>
                   <SelectItem value="all">All Orders</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="confirmed">Confirmed</SelectItem>
-                  <SelectItem value="processing">Processing</SelectItem>
-                  <SelectItem value="shipped">Shipped</SelectItem>
-                  <SelectItem value="delivered">Delivered</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                  <SelectItem value="in_transit">In Transit</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
                 </SelectContent>
               </Select>
               <Button variant="outline" size="sm">
@@ -310,7 +336,7 @@ const OrdersManagement = () => {
                         <div>
                           <h3 className="font-semibold">Order #{order.id}</h3>
                           <p className="text-sm text-muted-foreground">
-                            {order.users.name} • {formatDate(order.created_at)}
+                            {order.users?.name || 'Unknown User'} • {formatDate(order.created_at)}
                           </p>
                         </div>
                         <div className="flex flex-col gap-1">
@@ -341,6 +367,7 @@ const OrdersManagement = () => {
                                 setSelectedOrder(order);
                                 setUpdateForm({
                                   status: order.status || 'pending',
+                                  trackingNumber: order.tracking_number || '',
                                   notes: order.notes || ''
                                 });
                               }}
@@ -365,13 +392,26 @@ const OrdersManagement = () => {
                                   <SelectContent>
                                     <SelectItem value="pending">Pending</SelectItem>
                                     <SelectItem value="confirmed">Confirmed</SelectItem>
-                                    <SelectItem value="processing">Processing</SelectItem>
-                                    <SelectItem value="shipped">Shipped</SelectItem>
-                                    <SelectItem value="delivered">Delivered</SelectItem>
-                                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                                    <SelectItem value="rejected">Reject Order</SelectItem>
+                                    <SelectItem value="in_transit">In Transit</SelectItem>
+                                    <SelectItem value="completed">Completed</SelectItem>
                                   </SelectContent>
                                 </Select>
                               </div>
+                              
+                              {updateForm.status === 'in_transit' && (
+                                <div>
+                                  <Label htmlFor="trackingNumber">Tracking Number *</Label>
+                                  <Input
+                                    id="trackingNumber"
+                                    value={updateForm.trackingNumber}
+                                    onChange={(e) => setUpdateForm(prev => ({ ...prev, trackingNumber: e.target.value }))}
+                                    placeholder="Enter tracking number"
+                                    required
+                                  />
+                                </div>
+                              )}
+                              
                               <div>
                                 <Label htmlFor="notes">Order Notes</Label>
                                 <Textarea
@@ -444,8 +484,8 @@ const OrdersManagement = () => {
                             <div>
                               <h4 className="font-semibold text-sm mb-2">Customer Information</h4>
                               <div className="text-xs space-y-1">
-                                <p><span className="font-medium">Name:</span> {order.users.name}</p>
-                                <p><span className="font-medium">Email:</span> {order.users.email}</p>
+                                <p><span className="font-medium">Name:</span> {order.users?.name || 'Unknown User'}</p>
+                                <p><span className="font-medium">Email:</span> {order.users?.email || 'No email'}</p>
                                 {order.payment_id && (
                                   <p><span className="font-medium">Payment ID:</span> {order.payment_id}</p>
                                 )}

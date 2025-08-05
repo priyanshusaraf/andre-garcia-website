@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,7 @@ const CheckoutPage = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [orderId, setOrderId] = useState('');
+  const paymentSuccessRef = useRef(false);
   
   const [shippingAddress, setShippingAddress] = useState({
     fullName: user?.name || '',
@@ -41,7 +42,8 @@ const CheckoutPage = () => {
       return;
     }
 
-    if (items.length === 0) {
+    // Don't redirect if payment was successful
+    if (items.length === 0 && !success && !paymentSuccessRef.current) {
       router.push('/cart');
       return;
     }
@@ -57,7 +59,7 @@ const CheckoutPage = () => {
         document.body.removeChild(script);
       }
     };
-  }, [isAuthenticated, items.length, router]);
+  }, [isAuthenticated, items.length, router, success]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -146,6 +148,7 @@ const CheckoutPage = () => {
             if (verifyResponse.data.success) {
               setOrderId(verifyResponse.data.order.id);
               setSuccess(true);
+              paymentSuccessRef.current = true;
               clearCart();
             } else {
               setError('Payment verification failed. Please contact support.');

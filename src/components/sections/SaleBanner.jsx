@@ -47,7 +47,7 @@ const SaleBanner = () => {
   const banner = banners[currentBanner];
 
   return (
-    <div className="relative bg-gradient-to-r from-amber-100 to-amber-200 text-amber-900">
+    <div className="relative bg-gradient-to-r from-amber-900/20 to-amber-800/30 bg-amber-50 text-amber-900 border-b border-amber-200/50">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4 flex-1">
@@ -68,7 +68,7 @@ const SaleBanner = () => {
           
           <div className="flex items-center space-x-4">
             {banner.link_url && (
-              <Button asChild variant="outline" size="sm" className="border-amber-700 text-amber-800 hover:bg-amber-300">
+              <Button asChild variant="outline" size="sm" className="border-amber-800 text-amber-900 hover:bg-amber-100 bg-amber-50/80">
                 <Link href={banner.link_url} className="flex items-center">
                   Shop Now
                   <ArrowRight className="ml-2 h-4 w-4" />
@@ -83,7 +83,7 @@ const SaleBanner = () => {
                     key={index}
                     onClick={() => setCurrentBanner(index)}
                     className={`w-2 h-2 rounded-full transition-colors ${
-                      index === currentBanner ? 'bg-amber-800' : 'bg-amber-600'
+                      index === currentBanner ? 'bg-amber-900' : 'bg-amber-700'
                     }`}
                   />
                 ))}
@@ -92,7 +92,7 @@ const SaleBanner = () => {
             
             <button
               onClick={() => setIsVisible(false)}
-              className="p-1 hover:bg-amber-300 rounded transition-colors"
+              className="p-1 hover:bg-amber-200/50 rounded transition-colors"
               aria-label="Close banner"
             >
               <X className="h-4 w-4" />

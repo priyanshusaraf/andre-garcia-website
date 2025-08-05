@@ -194,7 +194,27 @@ function ProductForm({ product, onSave, onCancel, isLoading }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSave(formData);
+    
+    // Clean the form data before sending
+    const cleanedData = {
+      ...formData,
+      price: parseFloat(formData.price) || 0,
+      stock: parseInt(formData.stock) || 0,
+      rating: parseFloat(formData.rating) || 0,
+      reviews: parseInt(formData.reviews) || 0,
+      // Convert empty strings to null for optional text fields
+      description: formData.description?.trim() || null,
+      image_url: formData.image_url?.trim() || null,
+      quality: formData.quality?.trim() || null,
+      size: formData.size?.trim() || null,
+      category: formData.category?.trim() || null,
+      capacity: formData.capacity?.trim() || null,
+      badge: formData.badge?.trim() || null,
+      badgeVariant: formData.badgeVariant?.trim() || null
+    };
+    
+    console.log('Sending product data:', cleanedData);
+    onSave(cleanedData);
   };
 
   const handleChange = (e) => {

@@ -62,7 +62,12 @@ const Navbar = () => {
                   </NavigationMenuItem>
                   
                   <NavigationMenuItem>
-                    <NavigationMenuTrigger>Products</NavigationMenuTrigger>
+                    <NavigationMenuTrigger 
+                      className="cursor-pointer" 
+                      onClick={() => router.push('/products')}
+                    >
+                      Products
+                    </NavigationMenuTrigger>
                     <NavigationMenuContent>
                       <div className="w-[400px] p-4">
                         <div className="grid grid-cols-2 gap-4">

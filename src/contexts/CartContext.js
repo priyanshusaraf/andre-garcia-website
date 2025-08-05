@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import api from '../lib/utils';
 import { useAuth } from './AuthContext';
+import { toast } from '@/hooks/use-toast';
 
 // Cart actions
 const CART_ACTIONS = {
@@ -58,13 +59,33 @@ export const CartProvider = ({ children }) => {
 
   // Add item to cart
   const addItem = async (product, quantity = 1) => {
-    if (!token) return;
+    if (!token) {
+      // Redirect to login if not authenticated
+      window.location.href = '/auth/signin?redirect=' + encodeURIComponent(window.location.pathname);
+      return;
+    }
     dispatch({ type: CART_ACTIONS.SET_LOADING });
     try {
       const res = await api.post('/cart/add', { product_id: product.id, quantity }, { headers: { Authorization: `Bearer ${token}` } });
       dispatch({ type: CART_ACTIONS.SET_CART, payload: res.data.cart_items || [] });
+      
+      // Show success toast with product details
+      toast({
+        variant: "success",
+        title: "Added to Cart!",
+        description: `${product.name} has been added to your cart.`,
+        duration: 2000,
+      });
     } catch (err) {
       dispatch({ type: CART_ACTIONS.SET_ERROR, payload: 'Failed to add item' });
+      
+      // Show error toast
+      toast({
+        variant: "destructive",
+        title: "Failed to add item",
+        description: "There was an error adding the item to your cart. Please try again.",
+        duration: 3000,
+      });
     }
   };
 
@@ -94,7 +115,11 @@ export const CartProvider = ({ children }) => {
 
   // Clear cart
   const clearCart = async () => {
-    if (!token) return;
+    if (!token) {
+      // If no token, just clear local state
+      dispatch({ type: CART_ACTIONS.SET_CART, payload: [] });
+      return;
+    }
     dispatch({ type: CART_ACTIONS.SET_LOADING });
     try {
       const res = await api.delete('/cart/clear', { headers: { Authorization: `Bearer ${token}` } });

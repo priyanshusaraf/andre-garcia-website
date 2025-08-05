@@ -19,6 +19,7 @@ import UsersManagement from './components/UsersManagement';
 import ProductsManagement from './components/ProductsManagement';
 import SaleBannersManagement from './components/SaleBannersManagement';
 import HeroImagesManagement from './components/HeroImagesManagement';
+import ReviewsManagement from './components/ReviewsManagement';
 
 export default function AdminPanel() {
   const { isLoading, isSuperAdmin, token } = useAuth();
@@ -55,11 +56,12 @@ export default function AdminPanel() {
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="stats">Dashboard</TabsTrigger>
             <TabsTrigger value="orders">Orders</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="products">Products</TabsTrigger>
+            <TabsTrigger value="reviews">Reviews</TabsTrigger>
             <TabsTrigger value="banners">Sale Banners</TabsTrigger>
             <TabsTrigger value="hero">Hero Images</TabsTrigger>
           </TabsList>
@@ -78,6 +80,10 @@ export default function AdminPanel() {
           
           <TabsContent value="products" className="mt-6">
             <ProductsManagement token={token} />
+          </TabsContent>
+          
+          <TabsContent value="reviews" className="mt-6">
+            <ReviewsManagement token={token} />
           </TabsContent>
           
           <TabsContent value="banners" className="mt-6">

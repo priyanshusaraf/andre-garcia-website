@@ -7,6 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { 
   ArrowLeft, 
   Package, 
@@ -19,20 +23,30 @@ import {
   CheckCircle,
   Clock,
   XCircle,
-  AlertCircle
+  AlertCircle,
+  Star,
+  MessageSquare,
+  ShoppingBag
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCart } from '@/contexts/CartContext';
 import api from '@/lib/utils';
 import Link from 'next/link';
 
 const OrdersPage = () => {
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { addItem } = useCart();
   
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [expandedOrders, setExpandedOrders] = useState(new Set());
+  const [reviewModal, setReviewModal] = useState({ open: false, product: null, order: null });
+  const [reviewData, setReviewData] = useState({ rating: 5, comment: '' });
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [featuredProducts, setFeaturedProducts] = useState([]);
+  const [featuredLoading, setFeaturedLoading] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -42,15 +56,22 @@ const OrdersPage = () => {
 
     if (isAuthenticated) {
       fetchOrders();
+      fetchFeaturedProducts();
     }
   }, [isAuthenticated, authLoading, router]);
 
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/payment/orders', {
+      const token = localStorage.getItem('token');
+      if (!token || token === 'null' || token === 'undefined') {
+        router.push('/auth/signin?redirect=/orders');
+        return;
+      }
+      
+      const response = await api.get('/orders', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${token}`
         }
       });
 
@@ -67,6 +88,20 @@ const OrdersPage = () => {
     }
   };
 
+  const fetchFeaturedProducts = async () => {
+    try {
+      setFeaturedLoading(true);
+      const response = await api.get('/products?featured=true&limit=4');
+      if (response.data.success) {
+        setFeaturedProducts(response.data.products);
+      }
+    } catch (error) {
+      console.error('Fetch featured products error:', error);
+    } finally {
+      setFeaturedLoading(false);
+    }
+  };
+
   const toggleOrderExpansion = (orderId) => {
     const newExpanded = new Set(expandedOrders);
     if (newExpanded.has(orderId)) {
@@ -77,20 +112,58 @@ const OrdersPage = () => {
     setExpandedOrders(newExpanded);
   };
 
+  const openReviewModal = (product, order) => {
+    setReviewModal({ open: true, product, order });
+    setReviewData({ rating: 5, comment: '' });
+  };
+
+  const closeReviewModal = () => {
+    setReviewModal({ open: false, product: null, order: null });
+    setReviewData({ rating: 5, comment: '' });
+  };
+
+  const submitReview = async () => {
+    if (!reviewModal.product || !reviewModal.order) return;
+
+    setSubmittingReview(true);
+    try {
+      const response = await api.post('/reviews', {
+        product_id: reviewModal.product.id,
+        order_id: reviewModal.order.id,
+        rating: reviewData.rating,
+        comment: reviewData.comment
+      }, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (response.data.success) {
+        alert('Review submitted successfully!');
+        closeReviewModal();
+        // Optionally refresh orders to show updated review status
+        fetchOrders();
+      } else {
+        alert(response.data.message || 'Failed to submit review');
+      }
+    } catch (error) {
+      console.error('Submit review error:', error);
+      alert(error.response?.data?.message || 'Failed to submit review');
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
   const getStatusIcon = (status) => {
     switch (status) {
       case 'pending':
         return <Clock className="h-4 w-4 text-yellow-500" />;
-      case 'confirmed':
-        return <CheckCircle className="h-4 w-4 text-blue-500" />;
-      case 'processing':
-        return <Package className="h-4 w-4 text-blue-600" />;
-      case 'shipped':
-        return <Truck className="h-4 w-4 text-purple-500" />;
-      case 'delivered':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'cancelled':
+      case 'rejected':
         return <XCircle className="h-4 w-4 text-red-500" />;
+      case 'in_transit':
+        return <Truck className="h-4 w-4 text-blue-500" />;
+      case 'completed':
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
       default:
         return <AlertCircle className="h-4 w-4 text-gray-500" />;
     }
@@ -100,16 +173,12 @@ const OrdersPage = () => {
     switch (status) {
       case 'pending':
         return 'bg-yellow-100 text-yellow-800';
-      case 'confirmed':
-        return 'bg-blue-100 text-blue-800';
-      case 'processing':
-        return 'bg-blue-100 text-blue-800';
-      case 'shipped':
-        return 'bg-purple-100 text-purple-800';
-      case 'delivered':
-        return 'bg-green-100 text-green-800';
-      case 'cancelled':
+      case 'rejected':
         return 'bg-red-100 text-red-800';
+      case 'in_transit':
+        return 'bg-blue-100 text-blue-800';
+      case 'completed':
+        return 'bg-green-100 text-green-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -204,6 +273,12 @@ const OrdersPage = () => {
                           <Calendar className="h-3 w-3" />
                           {formatDate(order.created_at)}
                         </p>
+                        {order.tracking_number && (
+                          <p className="text-sm text-muted-foreground flex items-center gap-1">
+                            <Truck className="h-3 w-3" />
+                            Tracking: {order.tracking_number}
+                          </p>
+                        )}
                       </div>
                     </div>
                     
@@ -268,6 +343,19 @@ const OrdersPage = () => {
                                 ₹{parseFloat(item.price_at_purchase).toLocaleString()}
                               </span>
                             </div>
+                            {order.status === 'completed' && (
+                              <div className="mt-2">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  onClick={() => openReviewModal(item.products, order)}
+                                  className="w-full"
+                                >
+                                  <Star className="h-3 w-3 mr-1" />
+                                  Write Review
+                                </Button>
+                              </div>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -318,7 +406,7 @@ const OrdersPage = () => {
                           View Receipt
                         </Link>
                       </Button>
-                      {order.status === 'delivered' && (
+                      {order.status === 'completed' && (
                         <Button variant="outline" size="sm">
                           Reorder
                         </Button>
@@ -328,6 +416,117 @@ const OrdersPage = () => {
                 )}
               </Card>
             ))}
+          </div>
+        )}
+
+        {/* Review Modal */}
+        <Dialog open={reviewModal.open} onOpenChange={closeReviewModal}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Write a Review</DialogTitle>
+              <DialogDescription>
+                Share your experience with {reviewModal.product?.name}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="rating">Rating</Label>
+                <div className="flex gap-1 mt-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setReviewData(prev => ({ ...prev, rating: star }))}
+                      className={`text-2xl ${reviewData.rating >= star ? 'text-yellow-400' : 'text-gray-300'}`}
+                    >
+                      ★
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="comment">Comment (Optional)</Label>
+                <Textarea
+                  id="comment"
+                  value={reviewData.comment}
+                  onChange={(e) => setReviewData(prev => ({ ...prev, comment: e.target.value }))}
+                  placeholder="Share your thoughts about this product..."
+                  rows={3}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={submitReview} 
+                  disabled={submittingReview}
+                  className="flex-1"
+                >
+                  {submittingReview ? 'Submitting...' : 'Submit Review'}
+                </Button>
+                <Button variant="outline" onClick={closeReviewModal}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Featured Products */}
+        {featuredProducts.length > 0 && (
+          <div className="mt-12">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-serif font-bold">Featured Products</h2>
+              <Button variant="outline" asChild>
+                <Link href="/products">
+                  View All Products
+                </Link>
+              </Button>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {featuredProducts.map((product) => (
+                <Card key={product.id} className="group hover:shadow-lg transition-shadow">
+                  <CardContent className="p-4">
+                    <div className="aspect-square bg-gradient-to-br from-primary/20 to-secondary/20 rounded-lg mb-4 flex items-center justify-center overflow-hidden">
+                      {product.image_url ? (
+                        <img 
+                          src={product.image_url} 
+                          alt={product.name} 
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                        />
+                      ) : (
+                        <div className="w-16 h-16 bg-primary/20 rounded"></div>
+                      )}
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <h3 className="font-semibold text-sm line-clamp-2">{product.name}</h3>
+                      <p className="text-xs text-muted-foreground">{product.category}</p>
+                      
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-primary">
+                          ₹{parseFloat(product.sale_price || product.price).toLocaleString()}
+                        </span>
+                        {product.rating > 0 && (
+                          <div className="flex items-center gap-1">
+                            <Star className="h-3 w-3 text-yellow-400 fill-current" />
+                            <span className="text-xs">{product.rating}</span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <Button 
+                        size="sm" 
+                        className="w-full"
+                        onClick={() => addItem(product, 1)}
+                      >
+                        <ShoppingBag className="h-3 w-3 mr-1" />
+                        Add to Cart
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
         )}
       </div>

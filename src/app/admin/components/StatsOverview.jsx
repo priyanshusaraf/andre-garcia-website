@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import api from '../../../lib/utils';
@@ -31,6 +31,57 @@ export default function StatsOverview({ token }) {
     fetchStats();
   }, [token]);
 
+  // Prepare chart data
+  const orderStatusData = stats?.orderStatusStats?.map(item => ({
+    name: item.status,
+    value: item._count.id
+  })) || [];
+
+  const dailyOrdersData = stats?.ordersPerDay?.map(item => ({
+    date: new Date(item.created_at).toLocaleDateString(),
+    orders: item._count.id
+  })) || [];
+
+  // Process real revenue data for last 6 months
+  const revenueData = React.useMemo(() => {
+    if (!stats || !stats.monthlyRevenueData) {
+      return [];
+    }
+    
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const currentDate = new Date();
+    const result = [];
+    
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      const monthData = stats.monthlyRevenueData[monthKey] || { revenue: 0, orders: 0 };
+      
+      result.push({
+        month: months[date.getMonth()],
+        revenue: monthData.revenue,
+        // Set target as 110% of actual revenue for visual comparison, or a minimum of 1000
+        target: Math.max(monthData.revenue * 1.1, 1000)
+      });
+    }
+    
+    return result;
+  }, [stats]);
+
+  // Real shipment/fulfillment data
+  const shipmentData = React.useMemo(() => {
+    if (!stats || !stats.fulfillmentStats) {
+      return [];
+    }
+    
+    return [
+      { status: 'Pending', count: stats.fulfillmentStats.pending || 0, color: '#FF8042' },
+      { status: 'Confirmed', count: stats.fulfillmentStats.confirmed || 0, color: '#FFBB28' },
+      { status: 'In Transit', count: stats.fulfillmentStats.inTransit || 0, color: '#00C49F' },
+      { status: 'Delivered', count: stats.fulfillmentStats.completed || 0, color: '#0088FE' }
+    ];
+  }, [stats]);
+
   if (loading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -55,35 +106,6 @@ export default function StatsOverview({ token }) {
       </Card>
     );
   }
-
-  // Prepare chart data
-  const orderStatusData = stats?.orderStatusStats?.map(item => ({
-    name: item.status,
-    value: item._count.id
-  })) || [];
-
-  const dailyOrdersData = stats?.ordersPerDay?.map(item => ({
-    date: new Date(item.created_at).toLocaleDateString(),
-    orders: item._count.id
-  })) || [];
-
-  // Mock data for revenue tracker (UI only as requested)
-  const revenueData = [
-    { month: 'Jan', revenue: 4000, target: 4500 },
-    { month: 'Feb', revenue: 3000, target: 3200 },
-    { month: 'Mar', revenue: 5000, target: 4800 },
-    { month: 'Apr', revenue: 4500, target: 4000 },
-    { month: 'May', revenue: 6000, target: 5500 },
-    { month: 'Jun', revenue: 5500, target: 6000 }
-  ];
-
-  // Mock data for shipment tracker (UI only as requested)
-  const shipmentData = [
-    { status: 'Pending', count: 12, color: '#FF8042' },
-    { status: 'Processing', count: 8, color: '#FFBB28' },
-    { status: 'Shipped', count: 24, color: '#00C49F' },
-    { status: 'Delivered', count: 45, color: '#0088FE' }
-  ];
 
   return (
     <div className="space-y-6">
@@ -156,7 +178,7 @@ export default function StatsOverview({ token }) {
         <Card>
           <CardHeader>
             <CardTitle>Revenue Tracker</CardTitle>
-            <p className="text-sm text-muted-foreground">Monthly revenue vs targets (UI Demo)</p>
+            <p className="text-sm text-muted-foreground">Monthly revenue trends (Last 6 months)</p>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -207,8 +229,8 @@ export default function StatsOverview({ token }) {
         {/* Shipment Tracker */}
         <Card>
           <CardHeader>
-            <CardTitle>Order Shipment Tracker</CardTitle>
-            <p className="text-sm text-muted-foreground">Order fulfillment pipeline (UI Demo)</p>
+            <CardTitle>Order Fulfillment Tracker</CardTitle>
+            <p className="text-sm text-muted-foreground">Current order status distribution</p>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>

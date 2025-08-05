@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Star, ArrowLeft, Minus, Plus, Shield, Truck, RotateCcw, Heart } from 'lucide-react';
+import { Star, ArrowLeft, Minus, Plus, Shield, Truck, RotateCcw, Heart, MessageSquare, User } from 'lucide-react';
 import api from '@/lib/utils';
 import { useCart } from '@/contexts/CartContext';
 import Link from 'next/link';
@@ -17,6 +17,8 @@ const ProductDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [quantity, setQuantity] = useState(1);
+  const [reviews, setReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -24,12 +26,28 @@ const ProductDetail = () => {
       .then(res => {
         setProduct(res.data);
         setLoading(false);
+        // Load reviews after product loads
+        fetchReviews(res.data.id);
       })
       .catch(err => {
         setError('Failed to load product');
         setLoading(false);
       });
   }, [params.id]);
+
+  const fetchReviews = async (productId) => {
+    setReviewsLoading(true);
+    try {
+      const response = await api.get(`/reviews/product/${productId}`);
+      if (response.data.success) {
+        setReviews(response.data.reviews);
+      }
+    } catch (error) {
+      console.error('Failed to load reviews:', error);
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">Loading product...</div>;
@@ -258,6 +276,85 @@ const ProductDetail = () => {
                         <li key={index}>{feature}</li>
                       ))}
                     </ul>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Reviews */}
+      <section className="py-12">
+        <div className="container mx-auto px-4 lg:px-8">
+          <div className="max-w-4xl mx-auto">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5" />
+                  Customer Reviews
+                  {product.rating > 0 && (
+                    <div className="flex items-center gap-2 ml-4">
+                      <div className="flex gap-1">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star
+                            key={star}
+                            className={`h-4 w-4 ${product.rating >= star ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+                          />
+                        ))}
+                      </div>
+                      <span className="text-sm text-muted-foreground">
+                        ({product.rating}/5) • {product.reviews || 0} reviews
+                      </span>
+                    </div>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {reviewsLoading ? (
+                  <div className="text-center py-8">
+                    <div className="text-muted-foreground">Loading reviews...</div>
+                  </div>
+                ) : reviews.length === 0 ? (
+                  <div className="text-center py-8">
+                    <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">No reviews yet</p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Be the first to review this product!
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {reviews.map((review) => (
+                      <div key={review.id} className="border-b pb-6 last:border-b-0">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <User className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium">{review.user.name}</span>
+                          </div>
+                          <div className="flex gap-1">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <Star
+                                key={star}
+                                className={`h-4 w-4 ${review.rating >= star ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                        {review.comment && (
+                          <p className="text-muted-foreground leading-relaxed">
+                            {review.comment}
+                          </p>
+                        )}
+                        <div className="text-xs text-muted-foreground mt-2">
+                          {new Date(review.created_at).toLocaleDateString('en-IN', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
               </CardContent>
