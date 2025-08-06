@@ -18,7 +18,8 @@ import {
   X, 
   CheckCircle,
   Package,
-  Settings
+  Settings,
+  Key
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/utils';
@@ -350,6 +351,12 @@ const AccountPage = () => {
                   <Link href="/products">
                     <Package className="h-4 w-4 mr-2" />
                     Browse Products
+                  </Link>
+                </Button>
+                <Button variant="outline" className="w-full justify-start" asChild>
+                  <Link href="/auth/forgot-password">
+                    <Key className="h-4 w-4 mr-2" />
+                    Reset Password
                   </Link>
                 </Button>
                 <Separator />
