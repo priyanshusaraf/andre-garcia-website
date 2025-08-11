@@ -73,7 +73,7 @@ function HeroImageCard({ image, index, onUpdate, onRemove, isLoading }) {
           
           {imageData.url && (
             <div className="text-xs text-muted-foreground">
-              Preview: This image will appear in the homepage hero carousel
+              Preview: This image will appear as background in the homepage hero section
             </div>
           )}
         </div>
@@ -176,8 +176,8 @@ export default function HeroImagesManagement({ token }) {
         <CardHeader>
           <CardTitle>Hero Background Images</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Manage the background images that appear in the homepage hero carousel. 
-            Active images will automatically rotate every 10 seconds.
+            Manage the background images that appear in the homepage hero section (top of the page). 
+            Active images will automatically rotate every 10 seconds behind the main text.
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -228,8 +228,8 @@ export default function HeroImagesManagement({ token }) {
         </CardHeader>
         <CardContent>
           <div className="space-y-2 text-sm text-muted-foreground">
-            <p>• Hero images appear as background images on the homepage</p>
-            <p>• Images automatically rotate every 10 seconds in a carousel</p>
+            <p>• Hero images appear as background images in the top hero section</p>
+            <p>• Images automatically rotate every 10 seconds behind the main headline</p>
             <p>• Only active images will be displayed to visitors</p>
             <p>• At least one image must be active at all times</p>
             <p>• Images are optimized and cropped to fit the hero section</p>

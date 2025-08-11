@@ -3,8 +3,8 @@ export const products = [
     id: 1,
     name: "Signature Mahogany Humidor",
     category: "Desktop Humidors",
-    price: "$1,299",
-    originalPrice: "$1,599",
+    price: "₹1,09,999",
+    originalPrice: "₹1,35,999",
     rating: 5,
     reviews: 47,
     badge: "Best Seller",
@@ -34,7 +34,7 @@ export const products = [
     id: 2,
     name: "Executive Travel Case",
     category: "Travel Cases",
-    price: "$349",
+    price: "₹29,999",
     rating: 4.9,
     reviews: 23,
     badge: "New",
@@ -64,7 +64,7 @@ export const products = [
     id: 3,
     name: "Heritage Cabinet Collection",
     category: "Cabinet Humidors",
-    price: "$4,299",
+    price: "₹3,59,999",
     rating: 5,
     reviews: 12,
     badge: "Premium",
@@ -94,7 +94,7 @@ export const products = [
     id: 4,
     name: "Classic Desktop Humidor",
     category: "Desktop Humidors",
-    price: "$899",
+    price: "₹75,999",
     rating: 4.8,
     reviews: 34,
     capacity: "25 Cigars",
@@ -122,7 +122,7 @@ export const products = [
     id: 5,
     name: "Professional Travel Humidor",
     category: "Travel Cases",
-    price: "$799",
+    price: "₹67,999",
     rating: 4.9,
     reviews: 18,
     capacity: "15 Cigars",
@@ -150,7 +150,7 @@ export const products = [
     id: 6,
     name: "Artisan Display Cabinet",
     category: "Cabinet Humidors",
-    price: "$6,299",
+    price: "₹5,29,999",
     rating: 5,
     reviews: 8,
     badge: "Limited Edition",
@@ -180,7 +180,7 @@ export const products = [
     id: 7,
     name: "Compact Travel Tube",
     category: "Travel Cases",
-    price: "$179",
+    price: "₹14,999",
     rating: 4.7,
     reviews: 56,
     capacity: "2 Cigars",
@@ -208,7 +208,7 @@ export const products = [
     id: 8,
     name: "Master's Edition Humidor",
     category: "Desktop Humidors",
-    price: "$2,899",
+    price: "₹2,43,999",
     rating: 5,
     reviews: 15,
     badge: "Master's Choice",
@@ -238,7 +238,7 @@ export const products = [
     id: 9,
     name: "Precision Hygrometer Set",
     category: "Accessories",
-    price: "$199",
+    price: "₹16,999",
     rating: 4.9,
     reviews: 67,
     capacity: "N/A",
@@ -266,7 +266,7 @@ export const products = [
     id: 10,
     name: "Humidification Crystal Set",
     category: "Accessories",
-    price: "$89",
+    price: "₹7,499",
     rating: 4.6,
     reviews: 43,
     capacity: "N/A",
@@ -338,11 +338,11 @@ export const filterProducts = (products, searchTerm, category, sortBy) => {
       case "name-desc":
         return b.name.localeCompare(a.name);
       case "price-asc":
-        return parseFloat(a.price.replace('$', '').replace(',', '')) - 
-               parseFloat(b.price.replace('$', '').replace(',', ''));
+        return parseFloat(a.price.replace('₹', '').replace(/,/g, '')) - 
+               parseFloat(b.price.replace('₹', '').replace(/,/g, ''));
       case "price-desc":
-        return parseFloat(b.price.replace('$', '').replace(',', '')) - 
-               parseFloat(a.price.replace('$', '').replace(',', ''));
+        return parseFloat(b.price.replace('₹', '').replace(/,/g, '')) - 
+               parseFloat(a.price.replace('₹', '').replace(/,/g, ''));
       case "rating":
         return b.rating - a.rating;
       case "newest":

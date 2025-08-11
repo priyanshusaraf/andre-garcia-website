@@ -18,7 +18,7 @@ import OrdersManagement from './components/OrdersManagement';
 import UsersManagement from './components/UsersManagement';
 import ProductsManagement from './components/ProductsManagement';
 import SaleBannersManagement from './components/SaleBannersManagement';
-import HeroImagesManagement from './components/HeroImagesManagement';
+import GalleryManagement from './components/GalleryManagement';
 import ReviewsManagement from './components/ReviewsManagement';
 
 export default function AdminPanel() {
@@ -63,7 +63,7 @@ export default function AdminPanel() {
             <TabsTrigger value="products">Products</TabsTrigger>
             <TabsTrigger value="reviews">Reviews</TabsTrigger>
             <TabsTrigger value="banners">Sale Banners</TabsTrigger>
-            <TabsTrigger value="hero">Hero Images</TabsTrigger>
+            <TabsTrigger value="gallery">Carousel Images</TabsTrigger>
           </TabsList>
           
           <TabsContent value="stats" className="mt-6">
@@ -90,8 +90,8 @@ export default function AdminPanel() {
             <SaleBannersManagement token={token} />
           </TabsContent>
           
-          <TabsContent value="hero" className="mt-6">
-            <HeroImagesManagement token={token} />
+          <TabsContent value="gallery" className="mt-6">
+            <GalleryManagement token={token} />
           </TabsContent>
         </Tabs>
       </div>

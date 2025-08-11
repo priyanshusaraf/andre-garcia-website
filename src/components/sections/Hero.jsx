@@ -1,159 +1,75 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Shield, Award, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
-import api from '@/lib/utils';
+import { ArrowRight, Shield, Award, Clock } from 'lucide-react';
 
-const defaultCarouselImages = [
-  'https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=1500&q=80',
-  'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1500&q=80',
-  'https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=1500&q=80',
-];
-
+// Static hero with permanent brown gradient background and grid pattern
 const Hero = () => {
-  const [current, setCurrent] = useState(0);
-  const [carouselImages, setCarouselImages] = useState(defaultCarouselImages);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchHeroImages = async () => {
-      try {
-        const res = await api.get('/products/hero-images');
-        if (res.data && res.data.length > 0) {
-          // Filter active hero images
-          const activeImages = res.data.filter(image => image.active && image.url);
-          if (activeImages.length > 0) {
-            setCarouselImages(activeImages.map(image => image.url));
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching hero images:', error);
-        // Keep default images on error
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchHeroImages();
-  }, []);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrent((prev) => (prev + 1) % carouselImages.length);
-    }, 10000);
-    return () => clearInterval(interval);
-  }, [carouselImages.length]);
-  const prevSlide = () => setCurrent((prev) => (prev - 1 + carouselImages.length) % carouselImages.length);
-  const nextSlide = () => setCurrent((prev) => (prev + 1) % carouselImages.length);
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Carousel Images */}
-      {carouselImages.map((img, idx) => (
-        <img
-          key={img}
-          src={img}
-          alt="Banner"
-          className={`absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-1000 z-0 ${idx === current ? 'opacity-100' : 'opacity-0'}`}
-        />
-      ))}
-      {/* Overlay for darkening */}
-      <div className="absolute inset-0 bg-gradient-to-br from-black/60 to-primary/20 z-0"></div>
-      {/* Carousel Controls */}
-      <button onClick={prevSlide} className="absolute left-4 top-1/2 -translate-y-1/2 z-10 bg-black/40 hover:bg-black/70 text-white rounded-full p-2"><ChevronLeft className="h-6 w-6" /></button>
-      <button onClick={nextSlide} className="absolute right-4 top-1/2 -translate-y-1/2 z-10 bg-black/40 hover:bg-black/70 text-white rounded-full p-2"><ChevronRight className="h-6 w-6" /></button>
-      {/* Dots */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2 z-10">
-        {carouselImages.map((_, idx) => (
-          <span key={idx} className={`w-3 h-3 rounded-full ${idx === current ? 'bg-primary' : 'bg-white/50'} block`}></span>
-        ))}
-      </div>
+    <section className="relative min-h-[88vh] flex items-center justify-center overflow-hidden">
+      {/* Static themed gradient background */}
+      <div className="absolute inset-0 bg-[radial-gradient(60%_60%_at_50%_30%,#a5632a_0%,#7a3f17_40%,#4a2a12_100%)]" />
+      {/* Grid pattern overlay */}
+      <div className="absolute inset-0 opacity-40 bg-[linear-gradient(0deg,transparent_24%,rgba(255,255,255,0.08)_25%,rgba(255,255,255,0.08)_26%,transparent_27%,transparent_74%,rgba(255,255,255,0.08)_75%,rgba(255,255,255,0.08)_76%,transparent_77%),linear-gradient(90deg,transparent_24%,rgba(255,255,255,0.08)_25%,rgba(255,255,255,0.08)_26%,transparent_27%,transparent_74%,rgba(255,255,255,0.08)_75%,rgba(255,255,255,0.08)_76%,transparent_77%)] bg-[length:40px_40px]" />
+
       {/* Content */}
       <div className="container mx-auto px-4 lg:px-8 relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          {/* Text Content */}
-          <div className="space-y-8 animate-fade-in">
-            <div className="space-y-4">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold leading-tight text-white drop-shadow-lg">
-                <span className="premium-text">Artisan</span>
-                <br />
-                <span className="text-foreground">Cigar</span>
-                <br />
-                <span className="premium-text">Containers</span>
-              </h1>
-              <p className="text-xl text-white/90 leading-relaxed max-w-xl drop-shadow">
-                Preserve the essence of your finest cigars with our handcrafted 
-                premium humidors and storage solutions. Each piece is a masterwork 
-                of tradition and innovation.
-              </p>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Button asChild size="lg" className="shadow-luxury">
-                <Link href="/products" className="flex items-center">
-                  Shop Collection
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-              <Button variant="outline" size="lg" asChild>
-                <Link href="/about">
-                  Our Story
-                </Link>
-              </Button>
-            </div>
-            {/* Features */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-8">
-              <div className="flex items-center space-x-3">
-                <Shield className="h-6 w-6 text-primary" />
-                <div>
-                  <h3 className="font-semibold text-white">Lifetime Warranty</h3>
-                  <p className="text-sm text-white/80">Quality guaranteed</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-3">
-                <Award className="h-6 w-6 text-primary" />
-                <div>
-                  <h3 className="font-semibold text-white">Award Winning</h3>
-                  <p className="text-sm text-white/80">Recognized excellence</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-3">
-                <Clock className="h-6 w-6 text-primary" />
-                <div>
-                  <h3 className="font-semibold text-white">Since 1985</h3>
-                  <p className="text-sm text-white/80">Trusted craftsmanship</p>
-                </div>
-              </div>
-            </div>
+        <div className="max-w-4xl mx-auto text-center space-y-8">
+          <h1 className="font-display font-bold text-white drop-shadow-2xl leading-tight text-5xl md:text-6xl lg:text-7xl">
+            <span className="block">Artisan Cigar</span>
+            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-500">Containers</span>
+          </h1>
+          <p className="text-lg md:text-xl text-white/90 max-w-3xl mx-auto">
+            Preserve the essence of your finest cigars with our handcrafted premium humidors and storage solutions. Each piece is a masterwork of tradition and innovation.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button asChild size="lg" className="shadow-luxury">
+              <Link href="/products" className="flex items-center">
+                Discover Our Collection
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+            <Button variant="outline" size="lg" asChild>
+              <Link href="/about">Our Heritage</Link>
+            </Button>
           </div>
-          {/* Product Showcase (Optional) */}
-          <div className="relative hidden lg:block">
-            <div className="relative z-10 transform rotate-3 hover:rotate-0 transition-transform duration-700">
-              <div className="bg-card rounded-lg shadow-luxury p-8 border bg-white/80">
-                <img
-                  src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80"
-                  alt="Showcase Product"
-                  className="w-64 h-64 object-cover rounded-lg mx-auto"
-                />
-                <div className="space-y-2 text-center mt-4">
-                  <h3 className="font-serif text-lg font-semibold">Signature Series</h3>
-                  <p className="text-sm text-muted-foreground">Premium Humidor Collection</p>
-                </div>
+
+          {/* Feature grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-8">
+            <div className="flex items-center justify-center space-x-3">
+              <Shield className="h-6 w-6 text-amber-300" />
+              <div>
+                <h3 className="font-semibold text-white">Lifetime Warranty</h3>
+                <p className="text-sm text-white/80">Quality guaranteed</p>
               </div>
             </div>
-            {/* Floating Elements */}
-            <div className="absolute -top-4 -right-4 w-24 h-24 bg-accent/20 rounded-full blur-sm animate-pulse"></div>
-            <div className="absolute -bottom-4 -left-4 w-32 h-32 bg-primary/20 rounded-full blur-sm animate-pulse delay-1000"></div>
+            <div className="flex items-center justify-center space-x-3">
+              <Award className="h-6 w-6 text-amber-300" />
+              <div>
+                <h3 className="font-semibold text-white">Award Winning</h3>
+                <p className="text-sm text-white/80">Recognized excellence</p>
+              </div>
+            </div>
+            <div className="flex items-center justify-center space-x-3">
+              <Clock className="h-6 w-6 text-amber-300" />
+              <div>
+                <h3 className="font-semibold text-white">Since 1985</h3>
+                <p className="text-sm text-white/80">Trusted craftsmanship</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
+
       {/* Scroll Indicator */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce z-10">
-        <div className="w-6 h-10 border-2 border-primary rounded-full flex justify-center">
-          <div className="w-1 h-3 bg-primary rounded-full mt-2 animate-pulse"></div>
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce z-10">
+        <div className="w-6 h-10 border-2 border-amber-300 rounded-full flex justify-center">
+          <div className="w-1 h-3 bg-amber-300 rounded-full mt-2 animate-pulse"></div>
         </div>
       </div>
     </section>
   );
 };
 
-export default Hero; 
+export default Hero;

@@ -31,9 +31,11 @@ const CartSheet = () => {
   }, [itemCount, prevItemCount]);
 
   const formatPrice = (price) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'INR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(price);
   };
 
@@ -183,10 +185,10 @@ const CartSheet = () => {
                 </div>
 
                 {/* Free Shipping Notice */}
-                {totalPrice < 500 && (
+                {totalPrice < 5000 && (
                   <div className="text-center p-3 bg-muted rounded-lg">
                     <p className="text-sm text-muted-foreground">
-                      Add {formatPrice(500 - totalPrice)} more for free shipping!
+                      Add {formatPrice(5000 - totalPrice)} more for free shipping!
                     </p>
                   </div>
                 )}

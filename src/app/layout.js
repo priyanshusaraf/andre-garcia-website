@@ -28,24 +28,49 @@ const cinzel = Cinzel({
 });
 
 export const metadata = {
-  title: 'André García - Premium Cigar Containers & Humidors',
-  description: 'Discover handcrafted premium cigar containers, humidors, and storage solutions. Artisan quality since 1985. Preserve the essence of your finest cigars.',
-  keywords: 'cigar humidor, premium cigar containers, handcrafted humidors, cigar storage, luxury cigar accessories',
-  authors: [{ name: 'André García' }],
+  title: {
+    default: 'André García - Luxury Cigar Containers & Premium Humidors | Since 1985',
+    template: '%s | André García - Premium Cigar Containers'
+  },
+  description: 'Discover André García\'s handcrafted luxury cigar containers and premium humidors. Award-winning artisan quality since 1985. Preserve your finest cigars with our innovative storage solutions.',
+  keywords: [
+    'André García cigar containers',
+    'luxury cigar humidor',
+    'premium cigar storage',
+    'handcrafted humidors',
+    'artisan cigar containers',
+    'cigar preservation',
+    'luxury cigar accessories',
+    'custom humidors',
+    'cigar storage solutions',
+    'premium tobacco storage',
+    'handmade cigar boxes',
+    'cedar humidors',
+    'cigar container craftsmanship',
+    'luxury tobacco accessories',
+    'bespoke cigar storage'
+  ].join(', '),
+  authors: [{ name: 'André García', url: 'https://andregarcia.com' }],
   creator: 'André García',
   publisher: 'André García',
+  category: 'Luxury Goods',
+  classification: 'Cigar Accessories',
   formatDetection: {
     email: false,
     address: false,
     telephone: false,
   },
-  metadataBase: new URL('https://andregarcia.com'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://andregarcia.com'),
   alternates: {
     canonical: '/',
+    languages: {
+      'en-US': '/en-US',
+      'es-ES': '/es-ES',
+    },
   },
   openGraph: {
-    title: 'André García - Premium Cigar Containers & Humidors',
-    description: 'Discover handcrafted premium cigar containers, humidors, and storage solutions. Artisan quality since 1985.',
+    title: 'André García - Luxury Cigar Containers & Premium Humidors',
+    description: 'Award-winning artisan quality since 1985. Discover handcrafted luxury cigar containers and premium humidors that preserve the essence of your finest cigars.',
     url: 'https://andregarcia.com',
     siteName: 'André García',
     images: [
@@ -53,28 +78,50 @@ export const metadata = {
         url: '/og-image.jpg',
         width: 1200,
         height: 630,
-        alt: 'André García Premium Cigar Containers',
+        alt: 'André García Premium Cigar Containers and Luxury Humidors',
+        type: 'image/jpeg',
+      },
+      {
+        url: '/og-image-square.jpg',
+        width: 800,
+        height: 800,
+        alt: 'André García Artisan Cigar Storage Solutions',
+        type: 'image/jpeg',
       },
     ],
     locale: 'en_US',
     type: 'website',
+    countryName: 'United States',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'André García - Premium Cigar Containers & Humidors',
-    description: 'Discover handcrafted premium cigar containers, humidors, and storage solutions. Artisan quality since 1985.',
-    images: ['/og-image.jpg'],
+    title: 'André García - Luxury Cigar Containers & Premium Humidors',
+    description: 'Award-winning artisan quality since 1985. Handcrafted luxury cigar storage solutions.',
+    images: ['/twitter-image.jpg'],
+    creator: '@andregarcia',
+    site: '@andregarcia',
   },
   robots: {
     index: true,
     follow: true,
+    nocache: false,
     googleBot: {
       index: true,
       follow: true,
+      noimageindex: false,
       'max-video-preview': -1,
       'max-image-preview': 'large',
       'max-snippet': -1,
     },
+  },
+  verification: {
+    google: 'your-google-verification-code',
+    yandex: 'your-yandex-verification-code',
+    yahoo: 'your-yahoo-verification-code',
+  },
+  other: {
+    'msapplication-TileColor': '#8b4513',
+    'theme-color': '#8b4513',
   },
 };
 
